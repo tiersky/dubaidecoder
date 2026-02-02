@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Country Decoder - Abu Dhabi Tourism Agency</title>
+    <title>Country Decoder - Dubai Tourism Agency</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com" async></script>
     <!-- Chart.js and plugins -->
@@ -334,7 +334,7 @@
                             <select id="xAxisSelect" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
                                 <option value="spendsPerTripIndex">Spends Per Trip Index</option>
                                 <option value="touristDeparturesPopulationIndex">Tourist Departures / Population Index</option>
-                                <option value="searchVolumeFlightIndex">Search Volume - 'Flight to Abu Dhabi' Index</option>
+                                <option value="searchVolumeFlightIndex">Search Volume - 'Flight to Dubai' Index</option>
                                 <option value="gdpGrowthIndex">GDP - Growth Index</option>
                                 <option value="disposableIncomeIndex">Disposable Personal Income (USD) Index</option>
                                 <option value="mediaCostIndex">Media Cost Index</option>
@@ -352,7 +352,7 @@
                                 <option value="disposableIncomeIndex">Disposable Personal Income (USD) Index</option>
                                 <option value="spendsPerTripIndex">Spends Per Trip Index</option>
                                 <option value="touristDeparturesPopulationIndex">Tourist Departures / Population Index</option>
-                                <option value="searchVolumeFlightIndex">Search Volume - 'Flight to Abu Dhabi' Index</option>
+                                <option value="searchVolumeFlightIndex">Search Volume - 'Flight to Dubai' Index</option>
                                 <option value="gdpGrowthIndex">GDP - Growth Index</option>
                                 <option value="mediaCostIndex">Media Cost Index</option>
                                 <option value="globalExplorersIndex">Global Explorers (Audience M) Index</option>
@@ -371,7 +371,7 @@
                                 <option value="globalExplorersIndex">Global Explorers (Audience M) Index</option>
                                 <option value="spendsPerTripIndex">Spends Per Trip Index</option>
                                 <option value="touristDeparturesPopulationIndex">Tourist Departures / Population Index</option>
-                                <option value="searchVolumeFlightIndex">Search Volume - 'Flight to Abu Dhabi' Index</option>
+                                <option value="searchVolumeFlightIndex">Search Volume - 'Flight to Dubai' Index</option>
                                 <option value="gdpGrowthIndex">GDP - Growth Index</option>
                                 <option value="disposableIncomeIndex">Disposable Personal Income (USD) Index</option>
                                 <option value="mediaCostIndex">Media Cost Index</option>
@@ -959,7 +959,7 @@
                             </svg>
                         </div>
                         <p class="text-3xl font-bold text-blue-600">${country.dailyFlights}</p>
-                        <p class="text-sm text-gray-600 mt-2">Direct flights to Abu Dhabi</p>
+                        <p class="text-sm text-gray-600 mt-2">Direct flights to Dubai</p>
                     </div>
                     <div class="bg-white p-6 rounded-xl shadow-sm">
                         <div class="flex items-center justify-between mb-4">
@@ -979,7 +979,7 @@
                             </svg>
                         </div>
                         <p class="text-3xl font-bold text-purple-600">${country.searchVolumeAbuDhabi.toLocaleString()}</p>
-                        <p class="text-sm text-gray-600 mt-2">Annual searches for 'Abu Dhabi'</p>
+                        <p class="text-sm text-gray-600 mt-2">Annual searches for 'Dubai'</p>
                     </div>
                 </div>
 
@@ -1386,14 +1386,14 @@
                     attribution: '© OpenStreetMap contributors'
                 }).addTo(proximityMap);
 
-                // Abu Dhabi coordinates
+                // Dubai coordinates
                 const abuDhabiLat = 24.4539;
                 const abuDhabiLng = 54.3773;
                 
-                // Add Abu Dhabi marker
+                // Add Dubai marker
                 const abuDhabiMarker = L.marker([abuDhabiLat, abuDhabiLng])
                     .addTo(proximityMap)
-                    .bindPopup('<div style="font-weight: bold; color: #dc2626; font-size: 14px;">Abu Dhabi, UAE</div><div style="font-size: 12px; color: #6b7280; margin-top: 2px;">🏛️ Tourism Hub</div>');
+                    .bindPopup('<div style="font-weight: bold; color: #dc2626; font-size: 14px;">Dubai, UAE</div><div style="font-size: 12px; color: #6b7280; margin-top: 2px;">🏛️ Tourism Hub</div>');
                 
                 // Add country marker with distance info
                 const countryMarker = L.marker([country.lat, country.lng])
@@ -1402,7 +1402,7 @@
                         <div style="font-weight: bold; font-size: 14px;">${country.name}</div>
                         <div style="font-size: 12px; margin-top: 4px; color: #3b82f6;">📏 Distance: ${country.distance.toLocaleString()} km</div>
                         <div style="font-size: 12px; color: #059669;">✈️ Flight Time: ${country.flightTime}h</div>
-                        <div style="font-size: 11px; color: #6b7280; margin-top: 4px;">Direct route to Abu Dhabi</div>
+                        <div style="font-size: 11px; color: #6b7280; margin-top: 4px;">Direct route to Dubai</div>
                     `);
 
                 // Draw flight path line
@@ -1590,7 +1590,7 @@
                         <th class="spreadsheet-cell spreadsheet-header">Country</th>
                         <th class="spreadsheet-cell spreadsheet-header">Tier</th>
                         <th class="spreadsheet-cell spreadsheet-header">Tourist Departures/Population</th>
-                        <th class="spreadsheet-cell spreadsheet-header">Search Volume - 'Abu Dhabi'</th>
+                        <th class="spreadsheet-cell spreadsheet-header">Search Volume - 'Dubai'</th>
                         <th class="spreadsheet-cell spreadsheet-header">Media Cost</th>
                         <th class="spreadsheet-cell spreadsheet-header">Weighted Score</th>
                         <th class="spreadsheet-cell spreadsheet-header">% Split</th>
@@ -1656,7 +1656,7 @@
                 maxZoom: 18
             }).addTo(worldMap);
             
-            // Add Abu Dhabi marker
+            // Add Dubai marker
             const abuDhabiIcon = L.divIcon({
                 html: '<div style="background-color: #dc2626; width: 20px; height: 20px; border-radius: 50%; border: 3px solid white; box-shadow: 0 3px 8px rgba(0,0,0,0.4);"></div>',
                 className: 'custom-div-icon',
@@ -1666,7 +1666,7 @@
             
             const abuDhabiMarker = L.marker([24.4539, 54.3773], {icon: abuDhabiIcon})
                 .addTo(worldMap)
-                .bindPopup('<div style="font-weight: bold; font-size: 16px; color: #dc2626;">Abu Dhabi</div><div style="font-size: 12px; color: #6b7280; margin-top: 4px;">Tourism Hub - UAE</div>', {
+                .bindPopup('<div style="font-weight: bold; font-size: 16px; color: #dc2626;">Dubai</div><div style="font-size: 12px; color: #6b7280; margin-top: 4px;">Tourism Hub - UAE</div>', {
                     className: 'custom-popup'
                 });
             

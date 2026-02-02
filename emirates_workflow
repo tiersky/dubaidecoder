@@ -1,0 +1,32 @@
+digraph emirates_workflow {
+	bgcolor=transparent nodesep=0.45 rankdir=TB ranksep=0.6 splines=ortho
+	node [color="#0F172A" fontname=Helvetica fontsize=12 penwidth=1.2 shape=rect style="rounded,filled"]
+	edge [arrowsize=0.7 color="#0F172A"]
+	subgraph cluster_title {
+		color=transparent rank=same
+		title [label=<<B>WORKFLOW: EMIRATES SCAM AD DETECTOR</B>> fontcolor="#1F2937" fontsize=20 shape=plaintext]
+	}
+	schedule [label=<⏰ Schedule Trigger<BR/>Every 6 hours> fillcolor="#DCE9FF"]
+	config [label=<📁 Load Config &amp; Seeds> fillcolor="#DCE9FF"]
+	meta [label=<🔗 Meta Ads API> fillcolor="#C7E7E0"]
+	tiktok [label=<🔗 TikTok Ads API> fillcolor="#C7E7E0"]
+	merge [label=<🧩 Merge Results<BR/><BR/>&lt;b&gt;Initial Filter Rules&lt;/b&gt;<BR/>• Scam trigger terms<BR/>• Domain allowlist check<BR/>• Page age &lt; 90 days<BR/>• High spend anomaly> fillcolor="#CFEDEA"]
+	mlfilter [label=<🧠 OpenAI ML Classifier<BR/>• Scam probability scoring<BR/>• Features analysis> fillcolor="#CAD8FF"]
+	highrisk [label=<🟨 Filter High-Risk Ads<BR/>Score &gt; 0.7 threshold> fillcolor="#FFE5A8"]
+	sheets [label=<📄 Google Sheets<BR/>• Review queue<BR/>• Human validation> fillcolor="#CAD8FF"]
+	digest [label=<✉️ Weekly Digest<BR/>• Email summary<BR/>• Slack alert> fillcolor="#CAD8FF"]
+	report [label=<🚨 Report to APIs<BR/>• Meta Brand Rights<BR/>• TikTok IP Portal> fillcolor="#C9D7FF"]
+	logdb [label=<💾 Log Database<BR/>• Case tracking<BR/>• Audit trail> fillcolor="#CFDAFF"]
+	title -> schedule [style=invis]
+	schedule -> config
+	config -> meta
+	config -> tiktok
+	meta -> merge
+	tiktok -> merge
+	merge -> mlfilter
+	mlfilter -> highrisk
+	highrisk -> sheets
+	sheets -> digest
+	highrisk -> report
+	report -> logdb
+}
