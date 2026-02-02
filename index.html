@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Country Decoder - Abu Dhabi Tourism Agency</title>
+    <title>Country Decoder - Dubai Tourism Agency</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
@@ -318,9 +318,9 @@
 
                 <!-- Proximity and Spend Section -->
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-                    <!-- Proximity to Abu Dhabi -->
+                    <!-- Proximity to Dubai -->
                     <div class="bg-white p-6 rounded-xl shadow-sm">
-                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Proximity to Abu Dhabi</h3>
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Proximity to Dubai</h3>
                         <div class="mb-4">
                             <div class="flex items-center justify-between mb-2">
                                 <span class="text-sm text-gray-600">Flight Time</span>
@@ -368,7 +368,7 @@
 
                 <!-- Flight Connectivity Section -->
                 <div class="bg-white p-6 rounded-xl shadow-sm mb-8">
-                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Flight Connectivity to Abu Dhabi</h3>
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Flight Connectivity to Dubai</h3>
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
                         <div class="text-center">
                             <p class="text-3xl font-bold text-blue-600">${country.dailyFlights}</p>
@@ -864,10 +864,10 @@
                 attribution: ' OpenStreetMap contributors'
             }).addTo(proximityMap);
 
-            // Abu Dhabi marker
+            // Dubai marker
             L.marker([24.4539, 54.3773])
                 .addTo(proximityMap)
-                .bindPopup('<b>Abu Dhabi</b><br>Tourism Destination')
+                .bindPopup('<b>Dubai</b><br>Tourism Destination')
                 .openPopup();
 
             // Country marker
