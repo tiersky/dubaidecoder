@@ -4,16 +4,61 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Country Decoder - Dubai Tourism Agency</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com" async></script>
+    <!-- Chart.js and plugins -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
+    <!-- Leaflet Maps -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
         
+        /* Basic fallback styles */
         body {
-            font-family: 'Inter', sans-serif;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f9fafb;
+        }
+        
+        /* Loading screen styles */
+        .loading-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: white;
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .loading-content {
+            text-align: center;
+        }
+        
+        .spinner {
+            width: 64px;
+            height: 64px;
+            border: 3px solid #e5e7eb;
+            border-top: 3px solid #2563eb;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 16px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* Ensure main content is hidden initially */
+        .main-content {
+            display: none;
         }
         
         .country-item {
@@ -81,16 +126,114 @@
         .spend-indicator:hover {
             transform: scale(1.05);
         }
+        
+        .tab-button {
+            transition: all 0.2s ease;
+        }
+        
+        .tab-button.active {
+            background-color: #3b82f6;
+            color: white;
+            border-bottom: 3px solid #2563eb;
+        }
+        
+        .spreadsheet-cell {
+            border: 1px solid #e5e7eb;
+            padding: 8px;
+            font-size: 12px;
+        }
+        
+        .spreadsheet-header {
+            background-color: #f3f4f6;
+            font-weight: 600;
+        }
+        
+        .budget-input-cell {
+            background-color: #fef3c7;
+            border: 2px solid #f59e0b;
+            font-weight: 600;
+        }
+        
+        .perception-tooltip {
+            background: white;
+            padding: 12px;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+        }
+        
+        .custom-popup .leaflet-popup-content-wrapper {
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+            border: none;
+        }
+        
+        .custom-popup .leaflet-popup-tip {
+            background: white;
+        }
+        
+        .custom-popup .leaflet-popup-content {
+            margin: 12px 16px;
+            line-height: 1.4;
+        }
+        
+        .leaflet-popup-content-wrapper {
+            background: white;
+            color: #333;
+            border-radius: 8px;
+        }
+        
+        .leaflet-popup-tip {
+            background: white;
+        }
+        
+        .distance-popup .leaflet-popup-content-wrapper {
+            background: transparent;
+            box-shadow: none;
+            border: none;
+        }
+        
+        .distance-popup .leaflet-popup-tip {
+            display: none;
+        }
+        
+        .distance-popup .leaflet-popup-content {
+            margin: 0;
+            padding: 0;
+        }
     </style>
 </head>
 <body class="bg-gray-50">
+    <!-- Loading Screen -->
+    <div id="loadingScreen" class="loading-screen">
+        <div class="loading-content">
+            <div class="spinner"></div>
+            <h2 style="font-size: 1.25rem; font-weight: 600; color: #111827; margin-bottom: 8px;">Loading Country Decoder</h2>
+            <p style="color: #6b7280; margin: 0;">Initializing maps and analytics...</p>
+        </div>
+    </div>
+    
+    <!-- Main Content -->
+    <div id="mainContent" class="main-content">
     <!-- Header -->
     <header class="bg-white shadow-sm border-b border-gray-200">
         <div class="px-6 py-4">
-            <h1 class="text-2xl font-bold text-gray-900">
-                <span class="text-blue-600">Country</span> Decoder
-            </h1>
-            <p class="text-sm text-gray-600 mt-1">Strategic Travel Intelligence Dashboard</p>
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <img src="Country Decoder Logo.png" alt="Country Decoder" class="h-16 w-auto">
+                    <div>
+                        <p class="text-sm text-gray-600">Strategic Travel Intelligence Dashboard</p>
+                    </div>
+                </div>
+                <!-- Tab Navigation -->
+                <div class="flex gap-2">
+                    <button id="globalTab" class="tab-button active px-6 py-2 rounded-lg font-medium hover:bg-blue-100">
+                        Global Market Overview
+                    </button>
+                    <button id="budgetTab" class="tab-button px-6 py-2 rounded-lg font-medium hover:bg-blue-100">
+                        Budget Allocation
+                    </button>
+                </div>
+            </div>
         </div>
     </header>
 
@@ -116,56 +259,527 @@
             </div>
         </aside>
 
-        <!-- Main Dashboard -->
+        <!-- Main Content Area -->
         <main class="flex-1 overflow-y-auto bg-gray-50">
-            <div id="dashboard" class="p-8">
-                <div class="text-center py-20">
-                    <h2 class="text-2xl font-semibold text-gray-400">Select a country to view insights</h2>
+            <!-- Global Market Overview Tab -->
+            <div id="globalContent" class="p-8">
+                <div id="dashboardDefault">
+                    <div class="text-center mb-8">
+                        <h2 class="text-3xl font-bold text-gray-900 mb-2">Global Market Overview</h2>
+                        <p class="text-gray-600">Select a country from the map or sidebar to view detailed insights</p>
+                    </div>
+                    
+                    <!-- Legend -->
+                    <div class="flex justify-center gap-6 mb-6">
+                        <div class="flex items-center gap-2">
+                            <div class="w-4 h-4 bg-green-500 rounded"></div>
+                            <span class="text-sm text-gray-700">Tier 1 Markets</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <div class="w-4 h-4 bg-yellow-500 rounded"></div>
+                            <span class="text-sm text-gray-700">Tier 2 Markets</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <div class="w-4 h-4 bg-gray-300 rounded"></div>
+                            <span class="text-sm text-gray-700">Other Countries</span>
+                        </div>
+                    </div>
+
+                    <!-- World Map -->
+                    <div class="bg-white p-6 rounded-xl shadow-sm">
+                        <div id="worldMap" style="height: 500px; border-radius: 0.5rem; overflow: hidden;"></div>
+                    </div>
+
+                    <!-- Quick Stats -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
+                        <div class="bg-white p-6 rounded-xl shadow-sm text-center">
+                            <p class="text-3xl font-bold text-green-600">11</p>
+                            <p class="text-sm text-gray-600">Tier 1 Markets</p>
+                            <p class="text-xs text-gray-500 mt-1">High-priority destinations</p>
+                        </div>
+                        <div class="bg-white p-6 rounded-xl shadow-sm text-center">
+                            <p class="text-3xl font-bold text-yellow-600">15</p>
+                            <p class="text-sm text-gray-600">Tier 2 Markets</p>
+                            <p class="text-xs text-gray-500 mt-1">Secondary target markets</p>
+                        </div>
+                        <div class="bg-white p-6 rounded-xl shadow-sm text-center">
+                            <p class="text-3xl font-bold text-blue-600">26</p>
+                            <p class="text-sm text-gray-600">Total Markets</p>
+                            <p class="text-xs text-gray-500 mt-1">Global coverage analysis</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Country Dashboard (Hidden by default) -->
+                <div id="dashboard" style="display: none;">
+                    <!-- Content will be dynamically populated -->
+                </div>
+            </div>
+
+            <!-- Budget Allocation Tab (Hidden by default) -->
+            <div id="budgetContent" class="p-8" style="display: none;">
+                <div class="mb-8">
+                    <h2 class="text-3xl font-bold text-gray-900 mb-2">Budget Allocation Tool</h2>
+                    <p class="text-gray-600">Interactive market analysis and budget optimization</p>
+                </div>
+
+                <!-- Bubble Chart Section -->
+                <div class="bg-white p-6 rounded-xl shadow-sm mb-8">
+                    <h3 class="text-xl font-semibold mb-4">Market Analysis Bubble Chart</h3>
+                    
+                    <!-- Filter Controls -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">X-Axis Variable</label>
+                            <select id="xAxisSelect" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                                <option value="spendsPerTripIndex">Spends Per Trip Index</option>
+                                <option value="touristDeparturesPopulationIndex">Tourist Departures / Population Index</option>
+                                <option value="searchVolumeFlightIndex">Search Volume - 'Flight to Dubai' Index</option>
+                                <option value="gdpGrowthIndex">GDP - Growth Index</option>
+                                <option value="disposableIncomeIndex">Disposable Personal Income (USD) Index</option>
+                                <option value="mediaCostIndex">Media Cost Index</option>
+                                <option value="globalExplorersIndex">Global Explorers (Audience M) Index</option>
+                                <option value="budgetSplitIndex">Budget Split Index</option>
+                                <option value="marketTieringIndex">Market Tiering Index</option>
+                                <option value="audienceRatioIndex">Audience Ratio vs. Total Population Index</option>
+                                <option value="finalWeightedScore">Weighted Score</option>
+                                <option value="percentSplit">% Split</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Y-Axis Variable</label>
+                            <select id="yAxisSelect" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                                <option value="disposableIncomeIndex">Disposable Personal Income (USD) Index</option>
+                                <option value="spendsPerTripIndex">Spends Per Trip Index</option>
+                                <option value="touristDeparturesPopulationIndex">Tourist Departures / Population Index</option>
+                                <option value="searchVolumeFlightIndex">Search Volume - 'Flight to Dubai' Index</option>
+                                <option value="gdpGrowthIndex">GDP - Growth Index</option>
+                                <option value="mediaCostIndex">Media Cost Index</option>
+                                <option value="globalExplorersIndex">Global Explorers (Audience M) Index</option>
+                                <option value="budgetSplitIndex">Budget Split Index</option>
+                                <option value="marketTieringIndex">Market Tiering Index</option>
+                                <option value="audienceRatioIndex">Audience Ratio vs. Total Population Index</option>
+                                <option value="finalWeightedScore">Weighted Score</option>
+                                <option value="percentSplit">% Split</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Bubble Size</label>
+                            <select id="bubbleSizeSelect" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                                <option value="budgetSplit">Budget Split</option>
+                                <option value="finalWeightedScore">Weighted Score</option>
+                                <option value="globalExplorersIndex">Global Explorers (Audience M) Index</option>
+                                <option value="spendsPerTripIndex">Spends Per Trip Index</option>
+                                <option value="touristDeparturesPopulationIndex">Tourist Departures / Population Index</option>
+                                <option value="searchVolumeFlightIndex">Search Volume - 'Flight to Dubai' Index</option>
+                                <option value="gdpGrowthIndex">GDP - Growth Index</option>
+                                <option value="disposableIncomeIndex">Disposable Personal Income (USD) Index</option>
+                                <option value="mediaCostIndex">Media Cost Index</option>
+                                <option value="budgetSplitIndex">Budget Split Index</option>
+                                <option value="marketTieringIndex">Market Tiering Index</option>
+                                <option value="audienceRatioIndex">Audience Ratio vs. Total Population Index</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Bubble Chart Canvas -->
+                    <div class="chart-container" style="height: 400px;">
+                        <canvas id="bubbleChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Budget Allocation Spreadsheet -->
+                <div class="bg-white p-6 rounded-xl shadow-sm">
+                    <h3 class="text-xl font-semibold mb-4">Budget Allocation Calculator</h3>
+                    <div class="mb-6">
+                        <p class="text-sm text-gray-600 mb-4">Budget allocation based on Weighted Score (X2) from Excel analysis</p>
+                        
+                        <!-- Total Budget Input -->
+                        <div class="bg-yellow-50 p-4 rounded-lg border-2 border-yellow-300">
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Total Marketing Budget (AED)</label>
+                            <input type="number" id="totalBudgetInput" value="5000000" min="100000" step="100000" 
+                                   class="w-full px-4 py-3 text-lg font-bold border-2 border-yellow-400 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500" 
+                                   placeholder="Enter total budget in AED">
+                            <p class="text-xs text-gray-600 mt-2">Budget will be automatically allocated to countries based on % Split from analysis</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Spreadsheet Grid -->
+                    <div class="overflow-x-auto">
+                        <table id="budgetTable" class="w-full text-xs">
+                            <!-- Table will be populated by JavaScript -->
+                        </table>
+                    </div>
                 </div>
             </div>
         </main>
+    </div>
     </div>
 
     <script>
         // Register Chart.js plugins
         Chart.register(ChartDataLabels);
         
-        // Country data
+        // Perception scores data (hardcoded from Excel)
+        const perceptionScores = {
+            'UAE': { score: 85, explanation: 'Excellent infrastructure and luxury tourism offerings' },
+            'USA': { score: 78, explanation: 'Strong market with high disposable income and travel frequency' },
+            'France': { score: 75, explanation: 'Cultural affinity and established travel patterns to Middle East' },
+            'India': { score: 82, explanation: 'Large diaspora and strong business/leisure travel demand' },
+            'UK': { score: 77, explanation: 'Mature market seeking premium experiences and winter sun' },
+            'Italy': { score: 71, explanation: 'Growing interest in Middle Eastern culture and hospitality' },
+            'China': { score: 73, explanation: 'Emerging market with increasing outbound luxury travel' },
+            'Saudi Arabia': { score: 88, explanation: 'Regional market with cultural alignment and high spending' },
+            'Germany': { score: 74, explanation: 'Quality-conscious travelers seeking authentic experiences' },
+            'Russia': { score: 69, explanation: 'Price-sensitive but growing interest in year-round destinations' },
+            'Kuwait': { score: 86, explanation: 'High-value regional market with frequent travel patterns' },
+            'Egypt': { score: 72, explanation: 'Regional proximity and growing middle-class travel segment' },
+            'Kazakhstan': { score: 65, explanation: 'Emerging market with business and leisure potential' },
+            'Bahrain': { score: 84, explanation: 'Strong regional ties and weekend getaway market' },
+            'Qatar': { score: 87, explanation: 'Premium market with high per-capita spending' },
+            'Canada': { score: 76, explanation: 'Long-haul market seeking unique cultural experiences' },
+            'Romania': { score: 62, explanation: 'Growing EU market with increasing travel budgets' },
+            'Oman': { score: 83, explanation: 'Regional market with family and business travel focus' },
+            'Spain': { score: 70, explanation: 'Mediterranean market interested in cultural diversity' },
+            'Netherlands': { score: 73, explanation: 'Affluent market with sustainable travel preferences' },
+            'Japan': { score: 74, explanation: 'High-value market seeking luxury and unique experiences' },
+            'Uzbekistan': { score: 61, explanation: 'Developing market with cultural and business connections' },
+            'Poland': { score: 64, explanation: 'Growing EU economy with increasing outbound travel' },
+            'South Korea': { score: 72, explanation: 'Tech-savvy market interested in luxury shopping and culture' },
+            'Armenia': { score: 60, explanation: 'Small but growing market with diaspora connections' },
+            'Belgium': { score: 71, explanation: 'EU hub market with business and leisure travel mix' }
+        };
+
+        // Enhanced country data with dataviz metrics
         const countries = {
             tier1: [
-                { name: 'UAE', code: 'ae', population: '9.9M', gdp: '$507.1B', departures: '12.1M', salary: '$72,500', income: '$58,900', lat: 23.4241, lng: 53.8478, flightTime: 0.5, distance: 150, avgSpend: 2850, dailyFlights: 42, avgSeats: 285 },
-                { name: 'USA', code: 'us', population: '331.9M', gdp: '$25.46T', departures: '99.7M', salary: '$56,420', income: '$45,284', lat: 37.0902, lng: -95.7129, flightTime: 16, distance: 12800, avgSpend: 3200, dailyFlights: 4, avgSeats: 380 },
-                { name: 'France', code: 'fr', population: '67.8M', gdp: '$2.78T', departures: '28.4M', salary: '$42,000', income: '$34,560', lat: 46.2276, lng: 2.2137, flightTime: 7.5, distance: 5850, avgSpend: 2400, dailyFlights: 2, avgSeats: 320 },
-                { name: 'India', code: 'in', population: '1.42B', gdp: '$3.73T', departures: '28.9M', salary: '$8,200', income: '$6,100', lat: 20.5937, lng: 78.9629, flightTime: 3.5, distance: 2700, avgSpend: 1200, dailyFlights: 14, avgSeats: 280 },
-                { name: 'UK', code: 'gb', population: '67.7M', gdp: '$3.07T', departures: '71.7M', salary: '$44,000', income: '$36,200', lat: 55.3781, lng: -3.4360, flightTime: 8, distance: 6300, avgSpend: 2800, dailyFlights: 3, avgSeats: 350 },
-                { name: 'Italy', code: 'it', population: '58.9M', gdp: '$2.11T', departures: '33.2M', salary: '$35,000', income: '$28,500', lat: 41.8719, lng: 12.5674, flightTime: 6.5, distance: 5100, avgSpend: 2200, dailyFlights: 1, avgSeats: 290 },
-                { name: 'China', code: 'cn', population: '1.41B', gdp: '$17.73T', departures: '154.6M', salary: '$13,200', income: '$10,800', lat: 35.8617, lng: 104.1954, flightTime: 8.5, distance: 6800, avgSpend: 1800, dailyFlights: 2, avgSeats: 340 },
-                { name: 'Saudi Arabia', code: 'sa', population: '35.9M', gdp: '$833.5B', departures: '9.5M', salary: '$64,500', income: '$52,100', lat: 23.8859, lng: 45.0792, flightTime: 2.5, distance: 1950, avgSpend: 2500, dailyFlights: 8, avgSeats: 220 },
-                { name: 'Germany', code: 'de', population: '83.3M', gdp: '$4.26T', departures: '88.5M', salary: '$49,000', income: '$40,100', lat: 51.1657, lng: 10.4515, flightTime: 7, distance: 5600, avgSpend: 2600, dailyFlights: 2, avgSeats: 330 },
-                { name: 'Russia', code: 'ru', population: '143.4M', gdp: '$2.06T', departures: '45.3M', salary: '$14,800', income: '$11,900', lat: 61.5240, lng: 105.3188, flightTime: 6, distance: 4800, avgSpend: 1600, dailyFlights: 1, avgSeats: 300 },
-                { name: 'Kuwait', code: 'kw', population: '4.3M', gdp: '$184.6B', departures: '4.9M', salary: '$71,000', income: '$58,200', lat: 29.3117, lng: 47.4818, flightTime: 1.5, distance: 1200, avgSpend: 2700, dailyFlights: 7, avgSeats: 180 }
+                { 
+                    name: 'UAE', code: 'ae', population: '9.9M', gdp: '$507.1B', departures: '12.1M', 
+                    salary: '$72,500', income: '$58,900', lat: 23.4241, lng: 53.8478, 
+                    flightTime: 0.5, distance: 150, avgSpend: 2850, dailyFlights: 42, avgSeats: 285,
+                    gdpPerCapita: 51200, marketShare: 18.5, growthRate: 12.3, onlineBooking: 78, repeatVisitor: 65,
+                    outboundDepartures: 12.1, weightedScore: 4.8, searchVolumeAbuDhabi: 28922550,
+                    spendsPerTripIndex: 0.81, touristDeparturesPopulationIndex: 0.97, searchVolumeFlightIndex: 1.00,
+                    gdpGrowthIndex: 0.51, disposableIncomeIndex: 0.79, mediaCostIndex: 0.73, globalExplorersIndex: 0.42,
+                    budgetSplitIndex: 1.00, marketTieringIndex: 0.33, audienceRatioIndex: 0.84, finalWeightedScore: 106.75,
+                    percentSplit: 0.034670708, budgetSplit: 12134747.74
+                },
+                { 
+                    name: 'USA', code: 'us', population: '331.9M', gdp: '$25.46T', departures: '99.7M', 
+                    salary: '$56,420', income: '$45,284', lat: 37.0902, lng: -95.7129, 
+                    flightTime: 16, distance: 12800, avgSpend: 3200, dailyFlights: 4, avgSeats: 380,
+                    gdpPerCapita: 76700, marketShare: 8.2, growthRate: 6.5, onlineBooking: 82, repeatVisitor: 42,
+                    outboundDepartures: 99.7, weightedScore: 4.2, searchVolumeAbuDhabi: 6103390,
+                    spendsPerTripIndex: 1.00, touristDeparturesPopulationIndex: 0.25, searchVolumeFlightIndex: 0.74,
+                    gdpGrowthIndex: 0.70, disposableIncomeIndex: 0.99, mediaCostIndex: 0.99, globalExplorersIndex: 0.54,
+                    budgetSplitIndex: 0.58, marketTieringIndex: 0.91, audienceRatioIndex: 0.30, finalWeightedScore: 223.84,
+                    percentSplit: 0.072703305, budgetSplit: 25446156.73
+                },
+                { 
+                    name: 'France', code: 'fr', population: '67.8M', gdp: '$2.78T', departures: '28.4M', 
+                    salary: '$42,000', income: '$34,560', lat: 46.2276, lng: 2.2137, 
+                    flightTime: 7.5, distance: 5850, avgSpend: 2400, dailyFlights: 2, avgSeats: 320,
+                    gdpPerCapita: 41000, marketShare: 4.5, growthRate: 5.2, onlineBooking: 71, repeatVisitor: 38,
+                    outboundDepartures: 28.4, weightedScore: 3.8, searchVolumeAbuDhabi: 2502200,
+                    spendsPerTripIndex: 0.81, touristDeparturesPopulationIndex: 0.44, searchVolumeFlightIndex: 0.50,
+                    gdpGrowthIndex: 0.46, disposableIncomeIndex: 0.77, mediaCostIndex: 0.62, globalExplorersIndex: 0.42,
+                    budgetSplitIndex: 0.39, marketTieringIndex: 0.91, audienceRatioIndex: 0.34, finalWeightedScore: 210.75,
+                    percentSplit: 0.068451464, budgetSplit: 23958012.4
+                },
+                { 
+                    name: 'India', code: 'in', population: '1.42B', gdp: '$3.73T', departures: '28.9M', 
+                    salary: '$8,200', income: '$6,100', lat: 20.5937, lng: 78.9629, 
+                    flightTime: 3.5, distance: 2700, avgSpend: 1200, dailyFlights: 14, avgSeats: 280,
+                    gdpPerCapita: 2630, marketShare: 12.8, growthRate: 18.7, onlineBooking: 65, repeatVisitor: 58,
+                    outboundDepartures: 28.9, weightedScore: 5.1, searchVolumeAbuDhabi: 6910650,
+                    spendsPerTripIndex: 0.38, touristDeparturesPopulationIndex: 0.04, searchVolumeFlightIndex: 0.78,
+                    gdpGrowthIndex: 0.86, disposableIncomeIndex: 0.10, mediaCostIndex: 0.16, globalExplorersIndex: 1.00,
+                    budgetSplitIndex: 0.50, marketTieringIndex: 0.91, audienceRatioIndex: 0.37, finalWeightedScore: 199.53,
+                    percentSplit: 0.064806106, budgetSplit: 22682137.13
+                },
+                { 
+                    name: 'UK', code: 'gb', population: '67.7M', gdp: '$3.07T', departures: '71.7M', 
+                    salary: '$44,000', income: '$36,200', lat: 55.3781, lng: -3.4360, 
+                    flightTime: 8, distance: 6300, avgSpend: 2800, dailyFlights: 3, avgSeats: 350,
+                    gdpPerCapita: 45400, marketShare: 6.3, growthRate: 4.8, onlineBooking: 78, repeatVisitor: 45,
+                    outboundDepartures: 71.7, weightedScore: 4.1, searchVolumeAbuDhabi: 4336020,
+                    spendsPerTripIndex: 0.84, touristDeparturesPopulationIndex: 0.88, searchVolumeFlightIndex: 0.63,
+                    gdpGrowthIndex: 0.76, disposableIncomeIndex: 0.79, mediaCostIndex: 0.89, globalExplorersIndex: 0.44,
+                    budgetSplitIndex: 0.60, marketTieringIndex: 0.91, audienceRatioIndex: 0.37, finalWeightedScore: 220.46,
+                    percentSplit: 0.071604685, budgetSplit: 25061639.77
+                },
+                { 
+                    name: 'Italy', code: 'it', population: '58.9M', gdp: '$2.11T', departures: '33.2M', 
+                    salary: '$35,000', income: '$28,500', lat: 41.8719, lng: 12.5674, 
+                    flightTime: 6.5, distance: 5100, avgSpend: 2200, dailyFlights: 1, avgSeats: 290,
+                    gdpPerCapita: 35800, marketShare: 3.2, growthRate: 3.9, onlineBooking: 68, repeatVisitor: 41,
+                    outboundDepartures: 33.2, weightedScore: 3.1, searchVolumeAbuDhabi: 2192340,
+                    spendsPerTripIndex: 0.69, touristDeparturesPopulationIndex: 0.71, searchVolumeFlightIndex: 0.48,
+                    gdpGrowthIndex: 0.50, disposableIncomeIndex: 0.76, mediaCostIndex: 0.69, globalExplorersIndex: 0.37,
+                    budgetSplitIndex: 0.33, marketTieringIndex: 0.91, audienceRatioIndex: 0.28, finalWeightedScore: 210.60,
+                    percentSplit: 0.068402801, budgetSplit: 23940980.33
+                },
+                { 
+                    name: 'China', code: 'cn', population: '1.41B', gdp: '$17.73T', departures: '154.6M', 
+                    salary: '$13,200', income: '$10,800', lat: 35.8617, lng: 104.1954, 
+                    flightTime: 8.5, distance: 6800, avgSpend: 1800, dailyFlights: 2, avgSeats: 340,
+                    gdpPerCapita: 12600, marketShare: 7.5, growthRate: 22.1, onlineBooking: 88, repeatVisitor: 35,
+                    outboundDepartures: 154.6, weightedScore: 4.3, searchVolumeAbuDhabi: 54110,
+                    spendsPerTripIndex: 0.08, touristDeparturesPopulationIndex: 0.07, searchVolumeFlightIndex: 0.33,
+                    gdpGrowthIndex: 0.54, disposableIncomeIndex: 0.14, mediaCostIndex: 0.98, globalExplorersIndex: 0.96,
+                    budgetSplitIndex: 0.41, marketTieringIndex: 0.91, audienceRatioIndex: 0.30, finalWeightedScore: 211.99,
+                    percentSplit: 0.068854299, budgetSplit: 24099004.56
+                },
+                { 
+                    name: 'Saudi Arabia', code: 'sa', population: '35.9M', gdp: '$833.5B', departures: '9.5M', 
+                    salary: '$64,500', income: '$52,100', lat: 23.8859, lng: 45.0792, 
+                    flightTime: 2.5, distance: 1950, avgSpend: 2500, dailyFlights: 8, avgSeats: 220,
+                    gdpPerCapita: 23200, marketShare: 15.2, growthRate: 9.8, onlineBooking: 72, repeatVisitor: 71,
+                    outboundDepartures: 9.5, weightedScore: 4.9, searchVolumeAbuDhabi: 665560,
+                    spendsPerTripIndex: 0.19, touristDeparturesPopulationIndex: 0.42, searchVolumeFlightIndex: 0.37,
+                    gdpGrowthIndex: 0.32, disposableIncomeIndex: 0.21, mediaCostIndex: 0.55, globalExplorersIndex: 0.49,
+                    budgetSplitIndex: 0.33, marketTieringIndex: 0.91, audienceRatioIndex: 0.62, finalWeightedScore: 202.21,
+                    percentSplit: 0.065675902, budgetSplit: 22986565.8
+                },
+                { 
+                    name: 'Germany', code: 'de', population: '83.3M', gdp: '$4.26T', departures: '88.5M', 
+                    salary: '$49,000', income: '$40,100', lat: 51.1657, lng: 10.4515, 
+                    flightTime: 7, distance: 5600, avgSpend: 2600, dailyFlights: 2, avgSeats: 330,
+                    gdpPerCapita: 51200, marketShare: 5.1, growthRate: 4.2, onlineBooking: 75, repeatVisitor: 43,
+                    outboundDepartures: 88.5, weightedScore: 3.7, searchVolumeAbuDhabi: 2744520,
+                    spendsPerTripIndex: 0.60, touristDeparturesPopulationIndex: 0.80, searchVolumeFlightIndex: 0.52,
+                    gdpGrowthIndex: 0.48, disposableIncomeIndex: 0.88, mediaCostIndex: 0.69, globalExplorersIndex: 0.43,
+                    budgetSplitIndex: 0.39, marketTieringIndex: 0.91, audienceRatioIndex: 0.34, finalWeightedScore: 211.90,
+                    percentSplit: 0.068824776, budgetSplit: 24088671.55
+                },
+                { 
+                    name: 'Russia', code: 'ru', population: '143.4M', gdp: '$2.06T', departures: '45.3M', 
+                    salary: '$14,800', income: '$11,900', lat: 61.5240, lng: 105.3188, 
+                    flightTime: 6, distance: 4800, avgSpend: 1600, dailyFlights: 1, avgSeats: 300,
+                    gdpPerCapita: 14400, marketShare: 3.8, growthRate: 7.3, onlineBooking: 61, repeatVisitor: 48,
+                    outboundDepartures: 45.3, weightedScore: 3.4, searchVolumeAbuDhabi: 2488838,
+                    spendsPerTripIndex: 0.17, touristDeparturesPopulationIndex: 0.14, searchVolumeFlightIndex: 0.50,
+                    gdpGrowthIndex: 0.10, disposableIncomeIndex: 0.19, mediaCostIndex: 0.19, globalExplorersIndex: 0.43,
+                    budgetSplitIndex: 0.29, marketTieringIndex: 0.91, audienceRatioIndex: 0.30, finalWeightedScore: 193.98,
+                    percentSplit: 0.063005449, budgetSplit: 22051907.27
+                },
+                { 
+                    name: 'Kuwait', code: 'kw', population: '4.3M', gdp: '$184.6B', departures: '4.9M', 
+                    salary: '$71,000', income: '$58,200', lat: 29.3117, lng: 47.4818, 
+                    flightTime: 1.5, distance: 1200, avgSpend: 2700, dailyFlights: 7, avgSeats: 180,
+                    gdpPerCapita: 42900, marketShare: 8.9, growthRate: 8.2, onlineBooking: 74, repeatVisitor: 68,
+                    outboundDepartures: 4.9, weightedScore: 4.6, searchVolumeAbuDhabi: 319690,
+                    spendsPerTripIndex: 0.27, touristDeparturesPopulationIndex: 0.39, searchVolumeFlightIndex: 0.35,
+                    gdpGrowthIndex: 0.12, disposableIncomeIndex: 0.58, mediaCostIndex: 0.36, globalExplorersIndex: 0.39,
+                    budgetSplitIndex: 0.29, marketTieringIndex: 0.19, audienceRatioIndex: 0.98, finalWeightedScore: 55.16,
+                    percentSplit: 0.017914435, budgetSplit: 6270052.253
+                }
             ],
             tier2: [
-                { name: 'Egypt', code: 'eg', population: '109.3M', gdp: '$469.1B', departures: '8.3M', salary: '$4,200', income: '$3,100', lat: 26.8206, lng: 30.8025, flightTime: 4.5, distance: 3600, avgSpend: 900, dailyFlights: 3, avgSeats: 260 },
-                { name: 'Kazakhstan', code: 'kz', population: '19.6M', gdp: '$220.6B', departures: '10.4M', salary: '$10,500', income: '$8,200', lat: 48.0196, lng: 66.9237, flightTime: 5, distance: 4000, avgSpend: 1400, dailyFlights: 1, avgSeats: 240 },
-                { name: 'Bahrain', code: 'bh', population: '1.5M', gdp: '$44.4B', departures: '2.1M', salary: '$48,000', income: '$39,200', lat: 26.0667, lng: 50.5577, flightTime: 1, distance: 800, avgSpend: 2300, dailyFlights: 5, avgSeats: 160 },
-                { name: 'Qatar', code: 'qa', population: '2.7M', gdp: '$237.3B', departures: '2.8M', salary: '$88,000', income: '$72,100', lat: 25.3548, lng: 51.1839, flightTime: 1, distance: 800, avgSpend: 3100, dailyFlights: 6, avgSeats: 200 },
-                { name: 'Canada', code: 'ca', population: '38.2M', gdp: '$2.14T', departures: '32.3M', salary: '$52,000', income: '$42,900', lat: 56.1304, lng: -106.3468, flightTime: 15, distance: 12000, avgSpend: 2900, dailyFlights: 1, avgSeats: 380 },
-                { name: 'Romania', code: 'ro', population: '19.0M', gdp: '$301.3B', departures: '8.9M', salary: '$16,200', income: '$13,100', lat: 45.9432, lng: 24.9668, flightTime: 6, distance: 4800, avgSpend: 1300, dailyFlights: 0.5, avgSeats: 270 },
-                { name: 'Oman', code: 'om', population: '4.5M', gdp: '$114.7B', departures: '3.2M', salary: '$45,000', income: '$36,800', lat: 21.4735, lng: 55.9754, flightTime: 1.5, distance: 1200, avgSpend: 2100, dailyFlights: 4, avgSeats: 190 },
-                { name: 'Spain', code: 'es', population: '47.5M', gdp: '$1.40T', departures: '22.4M', salary: '$32,000', income: '$26,100', lat: 40.4637, lng: -3.7492, flightTime: 8, distance: 6400, avgSpend: 2000, dailyFlights: 1, avgSeats: 310 },
-                { name: 'Netherlands', code: 'nl', population: '17.5M', gdp: '$1.01T', departures: '22.1M', salary: '$53,000', income: '$43,500', lat: 52.1326, lng: 5.2913, flightTime: 7.5, distance: 6000, avgSpend: 2700, dailyFlights: 1, avgSeats: 320 },
-                { name: 'Japan', code: 'jp', population: '123.3M', gdp: '$4.23T', departures: '20.1M', salary: '$38,500', income: '$31,700', lat: 36.2048, lng: 138.2529, flightTime: 10, distance: 8000, avgSpend: 2400, dailyFlights: 1, avgSeats: 360 },
-                { name: 'Uzbekistan', code: 'uz', population: '35.3M', gdp: '$80.4B', departures: '6.7M', salary: '$3,800', income: '$2,900', lat: 41.3775, lng: 64.5853, flightTime: 4, distance: 3200, avgSpend: 800, dailyFlights: 0.7, avgSeats: 220 },
-                { name: 'Poland', code: 'pl', population: '37.7M', gdp: '$688.2B', departures: '11.8M', salary: '$18,000', income: '$14,600', lat: 51.9194, lng: 19.1451, flightTime: 6.5, distance: 5200, avgSpend: 1500, dailyFlights: 0.4, avgSeats: 280 },
-                { name: 'South Korea', code: 'kr', population: '51.7M', gdp: '$1.81T', departures: '28.7M', salary: '$35,100', income: '$28,900', lat: 35.9078, lng: 127.7669, flightTime: 9, distance: 7200, avgSpend: 2300, dailyFlights: 1, avgSeats: 340 },
-                { name: 'Armenia', code: 'am', population: '3.0M', gdp: '$19.5B', departures: '1.5M', salary: '$5,800', income: '$4,500', lat: 40.0691, lng: 45.0382, flightTime: 3.5, distance: 2800, avgSpend: 1000, dailyFlights: 0.3, avgSeats: 180 },
-                { name: 'Belgium', code: 'be', population: '11.7M', gdp: '$578.6B', departures: '8.9M', salary: '$47,000', income: '$38,600', lat: 50.5039, lng: 4.4699, flightTime: 7.5, distance: 6000, avgSpend: 2500, dailyFlights: 0.7, avgSeats: 300 }
+                { 
+                    name: 'Egypt', code: 'eg', population: '109.3M', gdp: '$469.1B', departures: '8.3M', 
+                    salary: '$4,200', income: '$3,100', lat: 26.8206, lng: 30.8025, 
+                    flightTime: 4.5, distance: 3600, avgSpend: 900, dailyFlights: 3, avgSeats: 260,
+                    gdpPerCapita: 4300, marketShare: 2.8, growthRate: 11.2, onlineBooking: 48, repeatVisitor: 52,
+                    outboundDepartures: 8.3, weightedScore: 2.9, searchVolumeAbuDhabi: 345030,
+                    spendsPerTripIndex: 0.08, touristDeparturesPopulationIndex: 0.17, searchVolumeFlightIndex: 0.35,
+                    gdpGrowthIndex: 0.01, disposableIncomeIndex: 0.09, mediaCostIndex: 0.13, globalExplorersIndex: 0.44,
+                    budgetSplitIndex: 0.27, marketTieringIndex: 0.25, audienceRatioIndex: 0.32, finalWeightedScore: 59.36,
+                    percentSplit: 0.019281516, budgetSplit: 6748530.502
+                },
+                { 
+                    name: 'Kazakhstan', code: 'kz', population: '19.6M', gdp: '$220.6B', departures: '10.4M', 
+                    salary: '$10,500', income: '$8,200', lat: 48.0196, lng: 66.9237, 
+                    flightTime: 5, distance: 4000, avgSpend: 1400, dailyFlights: 1, avgSeats: 240,
+                    gdpPerCapita: 11300, marketShare: 1.2, growthRate: 6.8, onlineBooking: 52, repeatVisitor: 45,
+                    outboundDepartures: 10.4, weightedScore: 2.3, searchVolumeAbuDhabi: 120190,
+                    spendsPerTripIndex: 0.19, touristDeparturesPopulationIndex: 0.27, searchVolumeFlightIndex: 0.34,
+                    gdpGrowthIndex: 0.77, disposableIncomeIndex: 0.20, mediaCostIndex: 0.10, globalExplorersIndex: 0.37,
+                    budgetSplitIndex: 0.69, marketTieringIndex: 0.25, audienceRatioIndex: 0.35, finalWeightedScore: 66.70,
+                    percentSplit: 0.021662948, budgetSplit: 7582031.68
+                },
+                { 
+                    name: 'Bahrain', code: 'bh', population: '1.5M', gdp: '$44.4B', departures: '2.1M', 
+                    salary: '$48,000', income: '$39,200', lat: 26.0667, lng: 50.5577, 
+                    flightTime: 1, distance: 800, avgSpend: 2300, dailyFlights: 5, avgSeats: 160,
+                    gdpPerCapita: 29600, marketShare: 3.5, growthRate: 7.5, onlineBooking: 69, repeatVisitor: 73,
+                    outboundDepartures: 2.1, weightedScore: 3.1, searchVolumeAbuDhabi: 206030,
+                    spendsPerTripIndex: 0.55, touristDeparturesPopulationIndex: 0.82, searchVolumeFlightIndex: 0.34,
+                    gdpGrowthIndex: 0.48, disposableIncomeIndex: 0.57, mediaCostIndex: 0.25, globalExplorersIndex: 0.36,
+                    budgetSplitIndex: 0.27, marketTieringIndex: 0.19, audienceRatioIndex: 0.99, finalWeightedScore: 54.62,
+                    percentSplit: 0.017739637, budgetSplit: 6208872.817
+                },
+                { 
+                    name: 'Qatar', code: 'qa', population: '2.7M', gdp: '$237.3B', departures: '2.8M', 
+                    salary: '$88,000', income: '$72,100', lat: 25.3548, lng: 51.1839, 
+                    flightTime: 1, distance: 800, avgSpend: 3100, dailyFlights: 6, avgSeats: 200,
+                    gdpPerCapita: 87900, marketShare: 4.8, growthRate: 8.9, onlineBooking: 81, repeatVisitor: 67,
+                    outboundDepartures: 2.8, weightedScore: 3.9, searchVolumeAbuDhabi: 268700,
+                    spendsPerTripIndex: 0.54, touristDeparturesPopulationIndex: 0.82, searchVolumeFlightIndex: 0.35,
+                    gdpGrowthIndex: 0.38, disposableIncomeIndex: 0.36, mediaCostIndex: 0.40, globalExplorersIndex: 0.39,
+                    budgetSplitIndex: 0.85, marketTieringIndex: 0.19, audienceRatioIndex: 1.00, finalWeightedScore: 65.09,
+                    percentSplit: 0.021141611, budgetSplit: 7399563.928
+                },
+                { 
+                    name: 'Canada', code: 'ca', population: '38.2M', gdp: '$2.14T', departures: '32.3M', 
+                    salary: '$52,000', income: '$42,900', lat: 56.1304, lng: -106.3468, 
+                    flightTime: 15, distance: 12000, avgSpend: 2900, dailyFlights: 1, avgSeats: 380,
+                    gdpPerCapita: 56000, marketShare: 2.1, growthRate: 5.5, onlineBooking: 79, repeatVisitor: 39,
+                    outboundDepartures: 32.3, weightedScore: 2.8, searchVolumeAbuDhabi: 1196600,
+                    spendsPerTripIndex: 0.52, touristDeparturesPopulationIndex: 0.59, searchVolumeFlightIndex: 0.41,
+                    gdpGrowthIndex: 0.28, disposableIncomeIndex: 0.78, mediaCostIndex: 0.86, globalExplorersIndex: 0.37,
+                    budgetSplitIndex: 0.31, marketTieringIndex: 0.25, audienceRatioIndex: 0.30, finalWeightedScore: 80.44,
+                    percentSplit: 0.026127799, budgetSplit: 9144729.675
+                },
+                { 
+                    name: 'Romania', code: 'ro', population: '19.0M', gdp: '$301.3B', departures: '8.9M', 
+                    salary: '$16,200', income: '$13,100', lat: 45.9432, lng: 24.9668, 
+                    flightTime: 6, distance: 4800, avgSpend: 1300, dailyFlights: 0.5, avgSeats: 270,
+                    gdpPerCapita: 15900, marketShare: 0.8, growthRate: 8.1, onlineBooking: 55, repeatVisitor: 42,
+                    outboundDepartures: 8.9, weightedScore: 1.9, searchVolumeAbuDhabi: 532200,
+                    spendsPerTripIndex: 0.21, touristDeparturesPopulationIndex: 0.80, searchVolumeFlightIndex: 0.37,
+                    gdpGrowthIndex: 0.43, disposableIncomeIndex: 0.17, mediaCostIndex: 0.16, globalExplorersIndex: 0.37,
+                    budgetSplitIndex: 0.69, marketTieringIndex: 0.25, audienceRatioIndex: 0.36, finalWeightedScore: 67.73,
+                    percentSplit: 0.021997253, budgetSplit: 7699038.674
+                },
+                { 
+                    name: 'Oman', code: 'om', population: '4.5M', gdp: '$114.7B', departures: '3.2M', 
+                    salary: '$45,000', income: '$36,800', lat: 21.4735, lng: 55.9754, 
+                    flightTime: 1.5, distance: 1200, avgSpend: 2100, dailyFlights: 4, avgSeats: 190,
+                    gdpPerCapita: 25500, marketShare: 4.2, growthRate: 9.2, onlineBooking: 66, repeatVisitor: 69,
+                    outboundDepartures: 3.2, weightedScore: 3.3, searchVolumeAbuDhabi: 240140,
+                    spendsPerTripIndex: 0.13, touristDeparturesPopulationIndex: 0.90, searchVolumeFlightIndex: 0.35,
+                    gdpGrowthIndex: 0.17, disposableIncomeIndex: 0.35, mediaCostIndex: 0.19, globalExplorersIndex: 0.35,
+                    budgetSplitIndex: 0.78, marketTieringIndex: 0.19, audienceRatioIndex: 0.39, finalWeightedScore: 57.37,
+                    percentSplit: 0.01863506, budgetSplit: 6522271.077
+                },
+                { 
+                    name: 'Spain', code: 'es', population: '47.5M', gdp: '$1.40T', departures: '22.4M', 
+                    salary: '$32,000', income: '$26,100', lat: 40.4637, lng: -3.7492, 
+                    flightTime: 8, distance: 6400, avgSpend: 2000, dailyFlights: 1, avgSeats: 310,
+                    gdpPerCapita: 29500, marketShare: 2.3, growthRate: 4.7, onlineBooking: 73, repeatVisitor: 44,
+                    outboundDepartures: 22.4, weightedScore: 2.6, searchVolumeAbuDhabi: 1255660,
+                    spendsPerTripIndex: 0.44, touristDeparturesPopulationIndex: 0.24, searchVolumeFlightIndex: 0.41,
+                    gdpGrowthIndex: 0.70, disposableIncomeIndex: 0.69, mediaCostIndex: 0.55, globalExplorersIndex: 0.37,
+                    budgetSplitIndex: 0.31, marketTieringIndex: 0.25, audienceRatioIndex: 0.30, finalWeightedScore: 73.75,
+                    percentSplit: 0.023952273, budgetSplit: 8383295.532
+                },
+                { 
+                    name: 'Netherlands', code: 'nl', population: '17.5M', gdp: '$1.01T', departures: '22.1M', 
+                    salary: '$53,000', income: '$43,500', lat: 52.1326, lng: 5.2913, 
+                    flightTime: 7.5, distance: 6000, avgSpend: 2700, dailyFlights: 1, avgSeats: 320,
+                    gdpPerCapita: 57700, marketShare: 1.9, growthRate: 4.1, onlineBooking: 82, repeatVisitor: 46,
+                    outboundDepartures: 22.1, weightedScore: 2.7, searchVolumeAbuDhabi: 880950,
+                    spendsPerTripIndex: 0.79, touristDeparturesPopulationIndex: 0.83, searchVolumeFlightIndex: 0.39,
+                    gdpGrowthIndex: 0.63, disposableIncomeIndex: 0.86, mediaCostIndex: 0.65, globalExplorersIndex: 0.38,
+                    budgetSplitIndex: 0.31, marketTieringIndex: 0.25, audienceRatioIndex: 0.45, finalWeightedScore: 78.54,
+                    percentSplit: 0.025509106, budgetSplit: 8928186.98
+                },
+                { 
+                    name: 'Japan', code: 'jp', population: '123.3M', gdp: '$4.23T', departures: '20.1M', 
+                    salary: '$38,500', income: '$31,700', lat: 36.2048, lng: 138.2529, 
+                    flightTime: 10, distance: 8000, avgSpend: 2400, dailyFlights: 1, avgSeats: 360,
+                    gdpPerCapita: 34300, marketShare: 1.8, growthRate: 3.2, onlineBooking: 67, repeatVisitor: 41,
+                    outboundDepartures: 20.1, weightedScore: 2.4, searchVolumeAbuDhabi: 234610,
+                    spendsPerTripIndex: 0.87, touristDeparturesPopulationIndex: 0.08, searchVolumeFlightIndex: 0.35,
+                    gdpGrowthIndex: 0.66, disposableIncomeIndex: 0.62, mediaCostIndex: 0.81, globalExplorersIndex: 0.36,
+                    budgetSplitIndex: 0.33, marketTieringIndex: 0.25, audienceRatioIndex: 0.26, finalWeightedScore: 80.71,
+                    percentSplit: 0.026215736, budgetSplit: 9175507.64
+                },
+                { 
+                    name: 'Uzbekistan', code: 'uz', population: '35.3M', gdp: '$80.4B', departures: '6.7M', 
+                    salary: '$3,800', income: '$2,900', lat: 41.3775, lng: 64.5853, 
+                    flightTime: 4, distance: 3200, avgSpend: 800, dailyFlights: 0.7, avgSeats: 220,
+                    gdpPerCapita: 2300, marketShare: 0.6, growthRate: 12.5, onlineBooking: 42, repeatVisitor: 55,
+                    outboundDepartures: 6.7, weightedScore: 1.8, searchVolumeAbuDhabi: 117380,
+                    spendsPerTripIndex: 0.49, touristDeparturesPopulationIndex: 0.10, searchVolumeFlightIndex: 0.34,
+                    gdpGrowthIndex: 1.00, disposableIncomeIndex: 0.09, mediaCostIndex: 0.07, globalExplorersIndex: 0.37,
+                    budgetSplitIndex: 0.58, marketTieringIndex: 0.25, audienceRatioIndex: 0.30, finalWeightedScore: 65.58,
+                    percentSplit: 0.021301731, budgetSplit: 7455605.899
+                },
+                { 
+                    name: 'Poland', code: 'pl', population: '37.7M', gdp: '$688.2B', departures: '11.8M', 
+                    salary: '$18,000', income: '$14,600', lat: 51.9194, lng: 19.1451, 
+                    flightTime: 6.5, distance: 5200, avgSpend: 1500, dailyFlights: 0.4, avgSeats: 280,
+                    gdpPerCapita: 18300, marketShare: 1.1, growthRate: 7.8, onlineBooking: 63, repeatVisitor: 43,
+                    outboundDepartures: 11.8, weightedScore: 2.1, searchVolumeAbuDhabi: 1251740,
+                    spendsPerTripIndex: 0.26, touristDeparturesPopulationIndex: 0.85, searchVolumeFlightIndex: 0.41,
+                    gdpGrowthIndex: 0.89, disposableIncomeIndex: 0.21, mediaCostIndex: 0.27, globalExplorersIndex: 0.42,
+                    budgetSplitIndex: 0.27, marketTieringIndex: 0.25, audienceRatioIndex: 0.42, finalWeightedScore: 64.78,
+                    percentSplit: 0.021039132, budgetSplit: 7363696.304
+                },
+                { 
+                    name: 'South Korea', code: 'kr', population: '51.7M', gdp: '$1.81T', departures: '28.7M', 
+                    salary: '$35,100', income: '$28,900', lat: 35.9078, lng: 127.7669, 
+                    flightTime: 9, distance: 7200, avgSpend: 2300, dailyFlights: 1, avgSeats: 340,
+                    gdpPerCapita: 35000, marketShare: 1.7, growthRate: 5.9, onlineBooking: 85, repeatVisitor: 38,
+                    outboundDepartures: 28.7, weightedScore: 2.5, searchVolumeAbuDhabi: 104600,
+                    spendsPerTripIndex: 0.52, touristDeparturesPopulationIndex: 0.29, searchVolumeFlightIndex: 0.34,
+                    gdpGrowthIndex: 0.09, disposableIncomeIndex: 0.79, mediaCostIndex: 0.75, globalExplorersIndex: 0.35,
+                    budgetSplitIndex: 0.29, marketTieringIndex: 0.25, audienceRatioIndex: 0.25, finalWeightedScore: 77.62,
+                    percentSplit: 0.025212202, budgetSplit: 8824270.656
+                },
+                { 
+                    name: 'Armenia', code: 'am', population: '3.0M', gdp: '$19.5B', departures: '1.5M', 
+                    salary: '$5,800', income: '$4,500', lat: 40.0691, lng: 45.0382, 
+                    flightTime: 3.5, distance: 2800, avgSpend: 1000, dailyFlights: 0.3, avgSeats: 180,
+                    gdpPerCapita: 6500, marketShare: 0.4, growthRate: 9.3, onlineBooking: 46, repeatVisitor: 58,
+                    outboundDepartures: 1.5, weightedScore: 1.6, searchVolumeAbuDhabi: 206910,
+                    spendsPerTripIndex: 0.18, touristDeparturesPopulationIndex: 0.39, searchVolumeFlightIndex: 0.34,
+                    gdpGrowthIndex: 0.56, disposableIncomeIndex: 0.10, mediaCostIndex: 0.10, globalExplorersIndex: 0.35,
+                    budgetSplitIndex: 0.47, marketTieringIndex: 0.25, audienceRatioIndex: 0.43, finalWeightedScore: 62.83,
+                    percentSplit: 0.02040657, budgetSplit: 7142299.53
+                },
+                { 
+                    name: 'Belgium', code: 'be', population: '11.7M', gdp: '$578.6B', departures: '8.9M', 
+                    salary: '$47,000', income: '$38,600', lat: 50.5039, lng: 4.4699, 
+                    flightTime: 7.5, distance: 6000, avgSpend: 2500, dailyFlights: 0.7, avgSeats: 300,
+                    gdpPerCapita: 49500, marketShare: 1.4, growthRate: 3.8, onlineBooking: 76, repeatVisitor: 47,
+                    outboundDepartures: 8.9, weightedScore: 2.2, searchVolumeAbuDhabi: 509220,
+                    spendsPerTripIndex: 0.92, touristDeparturesPopulationIndex: 0.80, searchVolumeFlightIndex: 0.36,
+                    gdpGrowthIndex: 0.64, disposableIncomeIndex: 0.81, mediaCostIndex: 0.55, globalExplorersIndex: 0.36,
+                    budgetSplitIndex: 0.29, marketTieringIndex: 0.25, audienceRatioIndex: 0.39, finalWeightedScore: 76.55,
+                    percentSplit: 0.024863496, budgetSplit: 8702223.59
+                }
             ]
         };
 
-        // Initialize charts
-        let seasonalityChart, budgetChart, travelerChart, heatmapChart, spendChart, comparisonChart, proximityMap, flightChart;
+        // Initialize variables
+        let currentTab = 'global';
+        let selectedCountry = null;
+        let bubbleChart = null;
+        let worldMap = null;
+
+        // Initialize all charts
+        let seasonalityChart, travelerChart, heatmapChart, spendChart, comparisonChart, proximityMap, flightChart;
+
+        // Tab switching
+        document.getElementById('globalTab').addEventListener('click', () => switchTab('global'));
+        document.getElementById('budgetTab').addEventListener('click', () => switchTab('budget'));
+
+        function switchTab(tab) {
+            currentTab = tab;
+            
+            // Update tab buttons
+            document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(tab + 'Tab').classList.add('active');
+            
+            // Show/hide content
+            document.getElementById('globalContent').style.display = tab === 'global' ? 'block' : 'none';
+            document.getElementById('budgetContent').style.display = tab === 'budget' ? 'block' : 'none';
+            
+            // Re-initialize world map when switching to global tab
+            if (tab === 'global' && worldMap) {
+                setTimeout(() => {
+                    worldMap.invalidateSize();
+                }, 100);
+            }
+            
+            if (tab === 'budget') {
+                initializeBubbleChart();
+                initializeBudgetTable();
+            }
+        }
 
         // Generate insights based on country
         function generateInsights(country) {
@@ -216,7 +830,6 @@
             const weeks = 52;
             const data = [];
             for (let i = 0; i < weeks; i++) {
-                // Simulate seasonal patterns with higher interest in winter months
                 const month = Math.floor(i / 4.33);
                 const baseValue = [0, 1, 2, 9, 10, 11].includes(month) ? 70 : 40;
                 data.push(baseValue + Math.random() * 30);
@@ -272,188 +885,165 @@
             });
         }
 
-        // Select country and update dashboard
+        // Select country
         function selectCountry(country) {
-            // Update active state
+            selectedCountry = country;
+            
+            // Update sidebar selection
             document.querySelectorAll('.country-item').forEach(item => {
                 item.classList.remove('active');
+                if (item.textContent.includes(country.name)) {
+                    item.classList.add('active');
+                }
             });
-            event.currentTarget.classList.add('active');
             
-            // Update dashboard
-            const dashboard = document.getElementById('dashboard');
-            dashboard.innerHTML = `
+            // If on global tab, show country dashboard
+            if (currentTab === 'global') {
+                document.getElementById('dashboardDefault').style.display = 'none';
+                document.getElementById('dashboard').style.display = 'block';
+                updateDashboard(country);
+            }
+        }
+
+        // Update dashboard with country data
+        function updateDashboard(country) {
+            const isTier1 = countries.tier1.includes(country);
+            const tierColor = isTier1 ? 'green' : 'yellow';
+            const tierNumber = isTier1 ? '1' : '2';
+            
+            const dashboardHTML = `
                 <!-- Country Header -->
-                <div class="flex items-center gap-4 mb-8">
-                    <img src="https://flagcdn.com/w80/${country.code}.png" alt="${country.name}" class="w-16 h-12 object-cover rounded-lg shadow-md">
-                    <div>
-                        <h2 class="text-3xl font-bold text-gray-900">${country.name}</h2>
-                        <p class="text-gray-600">Market Intelligence Report</p>
+                <div class="mb-8">
+                    <div class="flex items-center gap-4 mb-4">
+                        <img src="https://flagcdn.com/w80/${country.code}.png" alt="${country.name}" class="w-16 h-12 object-cover rounded shadow-sm">
+                        <div>
+                            <h1 class="text-3xl font-bold text-gray-900">${country.name}</h1>
+                            <span class="inline-block px-3 py-1 bg-${tierColor}-100 text-${tierColor}-700 rounded-full text-sm font-medium">
+                                Tier ${tierNumber} Market
+                            </span>
+                        </div>
                     </div>
                 </div>
 
                 <!-- KPI Cards -->
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                     <div class="metric-card bg-white p-6 rounded-xl shadow-sm">
-                        <p class="text-sm text-gray-600 mb-1">Population</p>
+                        <p class="text-sm text-gray-600 mb-2">Population</p>
                         <p class="text-2xl font-bold text-gray-900">${country.population}</p>
+                        <p class="text-xs text-gray-500 mt-1">Potential market size</p>
                     </div>
                     <div class="metric-card bg-white p-6 rounded-xl shadow-sm">
-                        <p class="text-sm text-gray-600 mb-1">GDP</p>
+                        <p class="text-sm text-gray-600 mb-2">GDP</p>
                         <p class="text-2xl font-bold text-gray-900">${country.gdp}</p>
+                        <p class="text-xs text-gray-500 mt-1">Economic strength</p>
                     </div>
                     <div class="metric-card bg-white p-6 rounded-xl shadow-sm">
-                        <p class="text-sm text-gray-600 mb-1">Annual Departures</p>
+                        <p class="text-sm text-gray-600 mb-2">Outbound Departures</p>
                         <p class="text-2xl font-bold text-gray-900">${country.departures}</p>
+                        <p class="text-xs text-gray-500 mt-1">Annual travelers</p>
                     </div>
                     <div class="metric-card bg-white p-6 rounded-xl shadow-sm">
-                        <p class="text-sm text-gray-600 mb-1">Median Salary</p>
-                        <p class="text-2xl font-bold text-gray-900">${country.salary}</p>
-                    </div>
-                    <div class="metric-card bg-white p-6 rounded-xl shadow-sm">
-                        <p class="text-sm text-gray-600 mb-1">Disposable Income</p>
+                        <p class="text-sm text-gray-600 mb-2">Avg. Income</p>
                         <p class="text-2xl font-bold text-gray-900">${country.income}</p>
+                        <p class="text-xs text-gray-500 mt-1">Per capita</p>
                     </div>
                 </div>
 
-                <!-- Proximity and Spend Section -->
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-                    <!-- Proximity to Dubai -->
+                <!-- Flight Connectivity Metrics -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                     <div class="bg-white p-6 rounded-xl shadow-sm">
-                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Proximity to Dubai</h3>
-                        <div class="mb-4">
-                            <div class="flex items-center justify-between mb-2">
-                                <span class="text-sm text-gray-600">Flight Time</span>
-                                <span class="text-xl font-bold text-blue-600">${country.flightTime}h</span>
-                            </div>
-                            <div class="flex items-center justify-between">
-                                <span class="text-sm text-gray-600">Distance</span>
-                                <span class="text-xl font-bold text-gray-900">${country.distance.toLocaleString()} km</span>
-                            </div>
-                        </div>
-                        <div class="relative">
-                            <div class="h-4 bg-gray-200 rounded-full overflow-hidden">
-                                <div class="h-full bg-gradient-to-r from-green-500 to-red-500" style="width: ${Math.min(country.flightTime / 20 * 100, 100)}%"></div>
-                            </div>
-                            <span class="text-xs text-gray-500 mt-1">Relative to furthest destination</span>
-                        </div>
-                    </div>
-
-                    <!-- Average Spend Per Traveler -->
-                    <div class="bg-white p-6 rounded-xl shadow-sm col-span-2">
-                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Average Expected Spend</h3>
                         <div class="flex items-center justify-between mb-4">
-                            <div>
-                                <p class="text-3xl font-bold text-gray-900">$${country.avgSpend.toLocaleString()}</p>
-                                <p class="text-sm text-gray-600">per traveler</p>
-                            </div>
-                            <div class="text-right">
-                                <p class="text-sm text-gray-600">Tier ${countries.tier1.includes(country) ? '1' : '2'} Average</p>
-                                <p class="text-xl font-semibold text-gray-700">$${Math.round(calculateTierAverage(countries.tier1.includes(country) ? 'tier1' : 'tier2', 'avgSpend')).toLocaleString()}</p>
-                            </div>
+                            <h3 class="text-lg font-semibold">Daily Flights</h3>
+                            <svg class="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
+                            </svg>
                         </div>
-                        <div class="chart-container" style="height: 200px;">
+                        <p class="text-3xl font-bold text-blue-600">${country.dailyFlights}</p>
+                        <p class="text-sm text-gray-600 mt-2">Direct flights to Dubai</p>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl shadow-sm">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-lg font-semibold">Monthly Capacity</h3>
+                            <svg class="w-6 h-6 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                            </svg>
+                        </div>
+                        <p class="text-3xl font-bold text-green-600">${(country.dailyFlights * country.avgSeats * 30).toLocaleString()}</p>
+                        <p class="text-sm text-gray-600 mt-2">Total monthly seats</p>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl shadow-sm">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-lg font-semibold">Search Volume</h3>
+                            <svg class="w-6 h-6 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                            </svg>
+                        </div>
+                        <p class="text-3xl font-bold text-purple-600">${country.searchVolumeAbuDhabi.toLocaleString()}</p>
+                        <p class="text-sm text-gray-600 mt-2">Annual searches for 'Dubai'</p>
+                    </div>
+                </div>
+
+                <!-- Seasonal Travel Patterns Chart -->
+                <div class="bg-white p-6 rounded-xl shadow-sm mb-8">
+                    <h3 class="text-lg font-semibold mb-4">Seasonal Travel Patterns</h3>
+                    <div class="chart-container">
+                        <canvas id="seasonalityChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Travel Interest Heatmap -->
+                <div class="bg-white p-6 rounded-xl shadow-sm mb-8">
+                    <h3 class="text-lg font-semibold mb-4">Travel Interest Heatmap - Monthly Pattern</h3>
+                    <div class="heatmap-container" style="height: 200px;">
+                        <canvas id="heatmapChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Charts Row 2 -->
+                <div class="grid grid-cols-1 gap-8 mb-8">
+                    <div class="bg-white p-6 rounded-xl shadow-sm">
+                        <h3 class="text-lg font-semibold mb-4">Average Spend Comparison</h3>
+                        <div class="chart-container">
                             <canvas id="spendChart"></canvas>
                         </div>
                     </div>
                 </div>
 
-                <!-- Seasonality Heatmap -->
-                <div class="bg-white p-6 rounded-xl shadow-sm mb-8">
-                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Travel Interest Heatmap - Monthly Pattern</h3>
-                    <div class="heatmap-container">
-                        <canvas id="heatmapChart"></canvas>
-                    </div>
-                </div>
-
-                <!-- Flight Connectivity Section -->
-                <div class="bg-white p-6 rounded-xl shadow-sm mb-8">
-                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Flight Connectivity to Dubai</h3>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-                        <div class="text-center">
-                            <p class="text-3xl font-bold text-blue-600">${country.dailyFlights}</p>
-                            <p class="text-sm text-gray-600">Daily Flights</p>
-                        </div>
-                        <div class="text-center">
-                            <p class="text-3xl font-bold text-gray-900">${Math.round(country.dailyFlights * 30)}</p>
-                            <p class="text-sm text-gray-600">Monthly Flights</p>
-                        </div>
-                        <div class="text-center">
-                            <p class="text-3xl font-bold text-green-600">${country.avgSeats}</p>
-                            <p class="text-sm text-gray-600">Avg. Seats per Flight</p>
-                        </div>
-                    </div>
-                    <div class="chart-container" style="height: 250px;">
-                        <canvas id="flightChart"></canvas>
-                    </div>
-                </div>
-
-                <!-- Charts Grid -->
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-                    <!-- Seasonality Chart -->
+                <!-- Charts Row 3 -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
                     <div class="bg-white p-6 rounded-xl shadow-sm">
-                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Monthly Travel Interest</h3>
+                        <h3 class="text-lg font-semibold mb-4">Flight Connectivity Analysis</h3>
                         <div class="chart-container">
-                            <canvas id="seasonalityChart"></canvas>
+                            <canvas id="flightChart"></canvas>
                         </div>
                     </div>
-
-                    <!-- Comparison Radar Chart -->
                     <div class="bg-white p-6 rounded-xl shadow-sm">
-                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Market Comparison vs Tier Average</h3>
+                        <h3 class="text-lg font-semibold mb-4">Market Comparison vs Tier Average</h3>
                         <div class="chart-container">
                             <canvas id="comparisonChart"></canvas>
                         </div>
                     </div>
-
-                    <!-- Budget Allocation Chart -->
-                    <div class="bg-white p-6 rounded-xl shadow-sm">
-                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Recommended Budget Split</h3>
-                        <div class="mb-4">
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Total Marketing Budget (USD)</label>
-                            <div class="flex items-center gap-3">
-                                <span class="text-gray-600">$</span>
-                                <input type="text" id="budgetInput" value="1,000,000" class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Enter budget">
-                                <button onclick="updateBudgetChart()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium">Update</button>
-                            </div>
-                        </div>
-                        <div class="chart-container">
-                            <canvas id="budgetChart"></canvas>
-                        </div>
-                    </div>
-
-                    <!-- Traveler Profile Chart -->
-                    <div class="bg-white p-6 rounded-xl shadow-sm">
-                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Age Distribution of Travelers</h3>
-                        <div class="chart-container">
-                            <canvas id="travelerChart"></canvas>
-                        </div>
-                    </div>
                 </div>
 
-                <!-- Map Visualization -->
-                <div class="bg-white p-6 rounded-xl shadow-sm mb-8">
-                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Geographic Visualization</h3>
-                    <div id="proximityMap" class="map-container"></div>
-                </div>
-
-                <!-- Strategic Insights -->
+                <!-- AI-Generated Insights -->
                 <div class="bg-white p-6 rounded-xl shadow-sm">
-                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Strategic Insights</h3>
-                    <ul class="space-y-3">
-                        ${generateInsights(country).map(insight => 
-                            `<li class="flex items-start gap-3">
-                                <svg class="w-5 h-5 text-blue-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    <h3 class="text-lg font-semibold mb-4">AI-Generated Market Insights</h3>
+                    <div class="space-y-3">
+                        ${generateInsights(country).map(insight => `
+                            <div class="flex gap-3">
+                                <svg class="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
                                 </svg>
-                                <span class="text-gray-700">${insight}</span>
-                            </li>`
-                        ).join('')}
-                    </ul>
+                                <p class="text-gray-700">${insight}</p>
+                            </div>
+                        `).join('')}
+                    </div>
                 </div>
             `;
             
-            // Initialize charts
+            document.getElementById('dashboard').innerHTML = dashboardHTML;
+            
+            // Initialize all charts
             setTimeout(() => {
                 initializeCharts(country);
             }, 100);
@@ -463,7 +1053,6 @@
         function initializeCharts(country) {
             // Destroy existing charts
             if (seasonalityChart) seasonalityChart.destroy();
-            if (budgetChart) budgetChart.destroy();
             if (travelerChart) travelerChart.destroy();
             if (heatmapChart) heatmapChart.destroy();
             if (spendChart) spendChart.destroy();
@@ -532,7 +1121,7 @@
             for (let month = 0; month < 12; month++) {
                 const baseValue = [0, 1, 2, 9, 10, 11].includes(month) ? 70 + Math.random() * 20 : 30 + Math.random() * 20;
                 monthlyData.push({
-                    x: month,
+                    x: months[month],
                     y: 0,
                     v: baseValue
                 });
@@ -541,6 +1130,7 @@
             heatmapChart = new Chart(heatmapCtx, {
                 type: 'scatter',
                 data: {
+                    labels: months,
                     datasets: [{
                         data: monthlyData,
                         backgroundColor: function(context) {
@@ -580,7 +1170,7 @@
                         tooltip: {
                             callbacks: {
                                 label: function(context) {
-                                    return `${months[context.raw.x]}: ${Math.round(context.raw.v)}% travel interest`;
+                                    return `${context.raw.x}: ${Math.round(context.raw.v)}% travel interest`;
                                 }
                             }
                         },
@@ -589,38 +1179,32 @@
                             color: '#fff',
                             font: {
                                 weight: 'bold',
-                                size: 12
+                                size: 10
                             },
-                            formatter: function(value) {
+                            formatter: function(value, context) {
                                 return Math.round(value.v) + '%';
-                            }
+                            },
+                            align: 'center'
                         }
                     },
                     scales: {
                         x: {
-                            type: 'linear',
+                            type: 'category',
                             position: 'bottom',
-                            min: -0.5,
-                            max: 11.5,
+                            labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
                             title: {
-                                display: true,
-                                text: 'Months',
+                                display: false
+                            },
+                            ticks: {
+                                autoSkip: false,
                                 font: {
-                                    size: 14,
+                                    size: 12,
                                     weight: 'bold'
                                 }
                             },
-                            ticks: {
-                                stepSize: 1,
-                                callback: function(value) {
-                                    return months[value] || '';
-                                },
-                                font: {
-                                    size: 12
-                                }
-                            },
                             grid: {
-                                display: false
+                                display: false,
+                                offset: true
                             }
                         },
                         y: {
@@ -643,10 +1227,14 @@
                     datasets: [{
                         data: [
                             country.avgSpend,
-                            tierAvgSpend,
-                            calculateTierAverage('tier1', 'avgSpend') * 0.6 + calculateTierAverage('tier2', 'avgSpend') * 0.4
+                            Math.round(tierAvgSpend),
+                            Math.round((calculateTierAverage('tier1', 'avgSpend') + calculateTierAverage('tier2', 'avgSpend')) / 2)
                         ],
-                        backgroundColor: ['#3b82f6', '#10b981', '#6b7280'],
+                        backgroundColor: [
+                            '#3b82f6',
+                            isTier1 ? '#10b981' : '#f59e0b',
+                            '#6b7280'
+                        ],
                         borderRadius: 8
                     }]
                 },
@@ -656,11 +1244,13 @@
                     plugins: {
                         legend: { display: false },
                         datalabels: {
-                            anchor: 'end',
-                            align: 'top',
-                            formatter: (value) => '$' + Math.round(value).toLocaleString(),
+                            display: true,
+                            color: '#fff',
                             font: {
                                 weight: 'bold'
+                            },
+                            formatter: function(value) {
+                                return '$' + value.toLocaleString();
                             }
                         }
                     },
@@ -677,25 +1267,23 @@
                 }
             });
 
-            // Comparison Radar Chart
+            // Market Comparison Radar Chart
             const comparisonCtx = document.getElementById('comparisonChart').getContext('2d');
-            const countryIncome = parseFloat(country.income.replace(/[^0-9.]/g, ''));
-            const countryDepartures = parseFloat(country.departures.replace(/[^0-9.]/g, ''));
-            const tierAvgIncome = calculateTierAverage(currentTier, 'income');
             const tierAvgDepartures = calculateTierAverage(currentTier, 'departures');
-
+            const tierAvgIncome = calculateTierAverage(currentTier, 'income');
+            
             comparisonChart = new Chart(comparisonCtx, {
                 type: 'radar',
                 data: {
-                    labels: ['Avg Spend', 'Income Level', 'Departures', 'Market Size', 'Digital Readiness'],
+                    labels: ['Outbound Departures', 'Average Income', 'Flight Connectivity', 'Market Maturity', 'Digital Adoption'],
                     datasets: [{
                         label: country.name,
                         data: [
-                            (country.avgSpend / 3500) * 100,
-                            (countryIncome / 80000) * 100,
-                            Math.min((countryDepartures / 100), 100),
-                            Math.min((parseFloat(country.population.replace(/[^0-9.]/g, '')) / 100), 100),
-                            70 + Math.random() * 30
+                            (parseFloat(country.departures.replace(/[^0-9.]/g, '')) / tierAvgDepartures * 100).toFixed(0),
+                            (parseFloat(country.income.replace(/[^0-9.]/g, '')) / tierAvgIncome * 100).toFixed(0),
+                            Math.min(country.dailyFlights * 10, 100),
+                            Math.random() * 30 + 70,
+                            Math.random() * 20 + 80
                         ],
                         borderColor: '#3b82f6',
                         backgroundColor: 'rgba(59, 130, 246, 0.2)',
@@ -705,19 +1293,13 @@
                         pointHoverBorderColor: '#3b82f6'
                     }, {
                         label: `Tier ${isTier1 ? '1' : '2'} Average`,
-                        data: [
-                            (tierAvgSpend / 3500) * 100,
-                            (tierAvgIncome / 80000) * 100,
-                            Math.min((tierAvgDepartures / 100), 100),
-                            50,
-                            75
-                        ],
-                        borderColor: '#10b981',
-                        backgroundColor: 'rgba(16, 185, 129, 0.2)',
-                        pointBackgroundColor: '#10b981',
+                        data: [100, 100, 80, 85, 90],
+                        borderColor: isTier1 ? '#10b981' : '#f59e0b',
+                        backgroundColor: isTier1 ? 'rgba(16, 185, 129, 0.1)' : 'rgba(245, 158, 11, 0.1)',
+                        pointBackgroundColor: isTier1 ? '#10b981' : '#f59e0b',
                         pointBorderColor: '#fff',
                         pointHoverBackgroundColor: '#fff',
-                        pointHoverBorderColor: '#10b981'
+                        pointHoverBorderColor: isTier1 ? '#10b981' : '#f59e0b'
                     }]
                 },
                 options: {
@@ -734,177 +1316,32 @@
                     scales: {
                         r: {
                             beginAtZero: true,
-                            max: 100,
+                            max: 120,
                             ticks: {
-                                stepSize: 20,
                                 display: false
                             },
-                            pointLabels: {
-                                font: {
-                                    size: 12
-                                }
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.1)'
                             }
                         }
                     }
                 }
             });
 
-            // Budget Allocation Chart
-            const budgetCtx = document.getElementById('budgetChart').getContext('2d');
-            const percentages = [35, 30, 20, 10, 5];
-            const totalBudget = 1000000; // Default budget
-            
-            budgetChart = new Chart(budgetCtx, {
-                type: 'doughnut',
-                data: {
-                    labels: ['Social Media', 'Search Ads', 'Content Marketing', 'Influencers', 'Other'],
-                    datasets: [{
-                        data: percentages,
-                        backgroundColor: [
-                            '#3b82f6',
-                            '#10b981',
-                            '#f59e0b',
-                            '#8b5cf6',
-                            '#6b7280'
-                        ],
-                        borderWidth: 2,
-                        borderColor: '#fff'
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: 'bottom',
-                            labels: {
-                                padding: 15,
-                                usePointStyle: true,
-                                generateLabels: function(chart) {
-                                    const data = chart.data;
-                                    const currentBudget = parseFloat(document.getElementById('budgetInput')?.value.replace(/,/g, '') || totalBudget);
-                                    return data.labels.map((label, i) => {
-                                        const amount = (percentages[i] / 100) * currentBudget;
-                                        return {
-                                            text: `${label}: $${amount.toLocaleString()}`,
-                                            fillStyle: data.datasets[0].backgroundColor[i],
-                                            hidden: false,
-                                            index: i
-                                        };
-                                    });
-                                }
-                            }
-                        },
-                        datalabels: {
-                            color: '#fff',
-                            font: {
-                                weight: 'bold',
-                                size: 14
-                            },
-                            formatter: (value) => value + '%'
-                        },
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    const currentBudget = parseFloat(document.getElementById('budgetInput')?.value.replace(/,/g, '') || totalBudget);
-                                    const amount = (context.parsed / 100) * currentBudget;
-                                    return `${context.label}: ${context.parsed}% ($${amount.toLocaleString()})`;
-                                }
-                            }
-                        }
-                    }
-                }
-            });
-
-            // Traveler Profile Chart
-            const travelerCtx = document.getElementById('travelerChart').getContext('2d');
-            travelerChart = new Chart(travelerCtx, {
-                type: 'bar',
-                data: {
-                    labels: ['18-24', '25-34', '35-44', '45-54', '55-64', '65+'],
-                    datasets: [{
-                        label: 'Percentage',
-                        data: [15, 35, 25, 15, 8, 2],
-                        backgroundColor: '#3b82f6',
-                        borderRadius: 8
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { display: false },
-                        datalabels: {
-                            anchor: 'end',
-                            align: 'top',
-                            formatter: (value) => value + '%',
-                            font: {
-                                weight: 'bold'
-                            }
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            max: 40,
-                            ticks: {
-                                callback: function(value) {
-                                    return value + '%';
-                                }
-                            }
-                        }
-                    }
-                }
-            });
-
-            // Initialize Map
-            proximityMap = L.map('proximityMap').setView([24.4539, 54.3773], 3);
-            
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: ' OpenStreetMap contributors'
-            }).addTo(proximityMap);
-
-            // Dubai marker
-            L.marker([24.4539, 54.3773])
-                .addTo(proximityMap)
-                .bindPopup('<b>Dubai</b><br>Tourism Destination')
-                .openPopup();
-
-            // Country marker
-            const countryMarker = L.marker([country.lat, country.lng])
-                .addTo(proximityMap)
-                .bindPopup(`<b>${country.name}</b><br>Flight time: ${country.flightTime}h<br>Distance: ${country.distance}km`);
-
-            // Draw flight path
-            const flightPath = L.polyline([
-                [24.4539, 54.3773],
-                [country.lat, country.lng]
-            ], {
-                color: '#3b82f6',
-                weight: 3,
-                opacity: 0.7,
-                dashArray: '10, 10'
-            }).addTo(proximityMap);
-
-            // Fit map to show both points
-            proximityMap.fitBounds([[24.4539, 54.3773], [country.lat, country.lng]], {
-                padding: [50, 50]
-            });
-
-            // Flight Capacity Chart
+            // Flight Connectivity Chart
             const flightCtx = document.getElementById('flightChart').getContext('2d');
-            const monthlyCapacity = country.dailyFlights * country.avgSeats * 30;
-            const allCountries = [...countries.tier1, ...countries.tier2];
-            const sortedByFlights = allCountries.sort((a, b) => b.dailyFlights - a.dailyFlights).slice(0, 10);
+            const allCountries = [...countries.tier1, ...countries.tier2]
+                .sort((a, b) => b.dailyFlights - a.dailyFlights)
+                .slice(0, 10);
             
             flightChart = new Chart(flightCtx, {
                 type: 'bar',
                 data: {
-                    labels: sortedByFlights.map(c => c.name),
+                    labels: allCountries.map(c => c.name),
                     datasets: [{
                         label: 'Daily Flights',
-                        data: sortedByFlights.map(c => c.dailyFlights),
-                        backgroundColor: sortedByFlights.map(c => c.name === country.name ? '#3b82f6' : '#e5e7eb'),
+                        data: allCountries.map(c => c.dailyFlights),
+                        backgroundColor: allCountries.map(c => c.name === country.name ? '#3b82f6' : '#e5e7eb'),
                         borderRadius: 6
                     }]
                 },
@@ -913,23 +1350,12 @@
                     maintainAspectRatio: false,
                     plugins: {
                         legend: { display: false },
-                        tooltip: {
-                            callbacks: {
-                                afterLabel: function(context) {
-                                    const c = sortedByFlights[context.dataIndex];
-                                    return `Monthly capacity: ${(c.dailyFlights * c.avgSeats * 30).toLocaleString()} seats`;
-                                }
-                            }
-                        },
                         datalabels: {
+                            display: true,
                             anchor: 'end',
                             align: 'top',
-                            formatter: (value) => value,
-                            display: function(context) {
-                                return context.dataset.data[context.dataIndex] > 0;
-                            },
+                            color: '#6b7280',
                             font: {
-                                weight: 'bold',
                                 size: 10
                             }
                         }
@@ -937,17 +1363,184 @@
                     scales: {
                         y: {
                             beginAtZero: true,
-                            ticks: {
-                                callback: function(value) {
-                                    return value + ' flights';
+                            title: {
+                                display: true,
+                                text: 'Daily Flights'
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Budget chart removed - no longer needed
+
+            // Proximity Map
+            setTimeout(() => {
+                // Clear any existing map
+                if (proximityMap) {
+                    proximityMap.remove();
+                }
+                
+                proximityMap = L.map('proximityMap').setView([24.4539, 54.3773], 2);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '© OpenStreetMap contributors'
+                }).addTo(proximityMap);
+
+                // Dubai coordinates
+                const abuDhabiLat = 24.4539;
+                const abuDhabiLng = 54.3773;
+                
+                // Add Dubai marker
+                const abuDhabiMarker = L.marker([abuDhabiLat, abuDhabiLng])
+                    .addTo(proximityMap)
+                    .bindPopup('<div style="font-weight: bold; color: #dc2626; font-size: 14px;">Dubai, UAE</div><div style="font-size: 12px; color: #6b7280; margin-top: 2px;">🏛️ Tourism Hub</div>');
+                
+                // Add country marker with distance info
+                const countryMarker = L.marker([country.lat, country.lng])
+                    .addTo(proximityMap)
+                    .bindPopup(`
+                        <div style="font-weight: bold; font-size: 14px;">${country.name}</div>
+                        <div style="font-size: 12px; margin-top: 4px; color: #3b82f6;">📏 Distance: ${country.distance.toLocaleString()} km</div>
+                        <div style="font-size: 12px; color: #059669;">✈️ Flight Time: ${country.flightTime}h</div>
+                        <div style="font-size: 11px; color: #6b7280; margin-top: 4px;">Direct route to Dubai</div>
+                    `);
+
+                // Draw flight path line
+                const flightPath = [
+                    [abuDhabiLat, abuDhabiLng],
+                    [country.lat, country.lng]
+                ];
+                
+                const polyline = L.polyline(flightPath, {
+                    color: '#3b82f6',
+                    weight: 3,
+                    opacity: 0.8,
+                    dashArray: '10, 5'
+                }).addTo(proximityMap);
+                
+                // Add distance label on the line
+                const midPoint = [
+                    (abuDhabiLat + country.lat) / 2,
+                    (abuDhabiLng + country.lng) / 2
+                ];
+                
+                L.popup({
+                    closeButton: false,
+                    autoClose: false,
+                    closeOnEscapeKey: false,
+                    closeOnClick: false,
+                    className: 'distance-popup'
+                })
+                .setLatLng(midPoint)
+                .setContent(`<div style="background: rgba(59, 130, 246, 0.9); color: white; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold;">${country.distance.toLocaleString()} km</div>`)
+                .openOn(proximityMap);
+                
+                // Fit bounds to show both locations with padding
+                const group = new L.featureGroup([abuDhabiMarker, countryMarker]);
+                proximityMap.fitBounds(group.getBounds().pad(0.15));
+                
+                // Force map to refresh
+                setTimeout(() => {
+                    proximityMap.invalidateSize();
+                }, 100);
+            }, 300);
+        }
+
+        // Budget chart function removed - no longer needed
+
+        // Initialize bubble chart
+        function initializeBubbleChart() {
+            const ctx = document.getElementById('bubbleChart').getContext('2d');
+            
+            if (bubbleChart) bubbleChart.destroy();
+            
+            const xAxis = document.getElementById('xAxisSelect').value;
+            const yAxis = document.getElementById('yAxisSelect').value;
+            const bubbleSize = document.getElementById('bubbleSizeSelect').value;
+            
+            const allCountries = [...countries.tier1, ...countries.tier2];
+            
+            const data = allCountries.map(country => {
+                const isTier1 = countries.tier1.includes(country);
+                let bubbleSizeValue = country[bubbleSize] || 1;
+                
+                // Handle different bubble size calculations
+                if (bubbleSize === 'budgetSplit') {
+                    bubbleSizeValue = country.budgetSplit / 1000000; // Convert to millions for better scaling
+                } else if (bubbleSize === 'finalWeightedScore') {
+                    bubbleSizeValue = country.finalWeightedScore;
+                } else {
+                    bubbleSizeValue = country[bubbleSize] || 0.1;
+                }
+                
+                // Scale bubble size appropriately
+                let bubbleRadius;
+                if (bubbleSize === 'budgetSplit') {
+                    bubbleRadius = Math.max(Math.sqrt(bubbleSizeValue) * 2, 8); // Scale for millions
+                } else if (bubbleSize === 'finalWeightedScore') {
+                    bubbleRadius = Math.max(Math.sqrt(bubbleSizeValue) / 2, 8); // Scale for weighted scores
+                } else {
+                    bubbleRadius = Math.max(bubbleSizeValue * 30, 8); // Scale for index values (0-1)
+                }
+                
+                return {
+                    x: country[xAxis] || 0,
+                    y: country[yAxis] || 0,
+                    r: Math.min(bubbleRadius, 40), // Cap maximum size
+                    label: country.name,
+                    backgroundColor: isTier1 ? 'rgba(16, 185, 129, 0.6)' : 'rgba(245, 158, 11, 0.6)',
+                    borderColor: isTier1 ? '#10b981' : '#f59e0b'
+                };
+            });
+            
+            bubbleChart = new Chart(ctx, {
+                type: 'bubble',
+                data: {
+                    datasets: [{
+                        data: data,
+                        backgroundColor: data.map(d => d.backgroundColor),
+                        borderColor: data.map(d => d.borderColor),
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const point = context.raw;
+                                    return [
+                                        point.label,
+                                        `${xAxis}: ${point.x.toLocaleString()}`,
+                                        `${yAxis}: ${point.y.toLocaleString()}`
+                                    ];
                                 }
                             }
                         },
+                        datalabels: {
+                            display: true,
+                            formatter: function(value, context) {
+                                return value.label;
+                            },
+                            font: {
+                                size: 10
+                            }
+                        }
+                    },
+                    scales: {
                         x: {
-                            ticks: {
-                                autoSkip: false,
-                                maxRotation: 45,
-                                minRotation: 45
+                            title: {
+                                display: true,
+                                text: xAxis.replace(/([A-Z])/g, ' $1').trim()
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: yAxis.replace(/([A-Z])/g, ' $1').trim()
                             }
                         }
                     }
@@ -955,30 +1548,279 @@
             });
         }
 
+        // Budget allocation data from actual table
+        const budgetAllocationData = {
+            'UAE': { touristDepartures: 1.665726872, searchVolume: 28922550, mediaCost: 7.8, weightedScore: 106.7456175, splitPercentage: 3.4670708 },
+            'USA': { touristDepartures: 0.492023546, searchVolume: 6103390, mediaCost: 12, weightedScore: 223.8419597, splitPercentage: 7.2703305 },
+            'UK': { touristDepartures: 1.337837575, searchVolume: 4336020, mediaCost: 9.5, weightedScore: 220.4594831, splitPercentage: 7.1604685 },
+            'Germany': { touristDepartures: 1.190586124, searchVolume: 2744520, mediaCost: 7.5, weightedScore: 211.900583, splitPercentage: 6.8824776 },
+            'France': { touristDepartures: 0.739236045, searchVolume: 2502200, mediaCost: 7, weightedScore: 210.7512149, splitPercentage: 6.8451464 },
+            'Egypt': { touristDepartures: 0.370379082, searchVolume: 345030, mediaCost: 3.2, weightedScore: 59.3647327, splitPercentage: 1.9281516 },
+            'Kazakhstan': { touristDepartures: 0.525608581, searchVolume: 120190, mediaCost: 2.8, weightedScore: 66.69678442, splitPercentage: 2.1662948 },
+            'Bahrain': { touristDepartures: 1.227441822, searchVolume: 206030, mediaCost: 4.4, weightedScore: 54.61753119, splitPercentage: 1.7739637 },
+            'Qatar': { touristDepartures: 1.224137931, searchVolume: 268700, mediaCost: 5.5, weightedScore: 65.09167212, splitPercentage: 2.1141611 },
+            'Canada': { touristDepartures: 0.91194936, searchVolume: 1196600, mediaCost: 9, weightedScore: 80.4433547, splitPercentage: 2.6127799 },
+            'Romania': { touristDepartures: 1.187480315, searchVolume: 532200, mediaCost: 3.5, weightedScore: 67.72605871, splitPercentage: 2.1997253 },
+            'Oman': { touristDepartures: 1.387451979, searchVolume: 240140, mediaCost: 3.8, weightedScore: 57.37439862, splitPercentage: 1.863506 },
+            'Spain': { touristDepartures: 0.481146952, searchVolume: 1255660, mediaCost: 6.5, weightedScore: 73.74525437, splitPercentage: 2.3952273 },
+            'Netherlands': { touristDepartures: 1.24391072, searchVolume: 880950, mediaCost: 7.2, weightedScore: 78.53849567, splitPercentage: 2.5509106 },
+            'Japan': { touristDepartures: 0.164651794, searchVolume: 234610, mediaCost: 8.5, weightedScore: 80.71409892, splitPercentage: 2.6215736 },
+            'Uzbekistan': { touristDepartures: 0.227415427, searchVolume: 117380, mediaCost: 2.2, weightedScore: 65.58465598, splitPercentage: 2.1301731 },
+            'Poland': { touristDepartures: 1.277238177, searchVolume: 1251740, mediaCost: 4.5, weightedScore: 64.77615574, splitPercentage: 2.1039132 },
+            'South Korea': { touristDepartures: 0.554324324, searchVolume: 104600, mediaCost: 8, weightedScore: 77.62437595, splitPercentage: 2.5212202 },
+            'Armenia': { touristDepartures: 0.67266762, searchVolume: 206910, mediaCost: 2.8, weightedScore: 62.82859689, splitPercentage: 2.040657 },
+            'Belgium': { touristDepartures: 1.20002865, searchVolume: 509220, mediaCost: 6.5, weightedScore: 76.55076572, splitPercentage: 2.4863496 },
+            'Italy': { touristDepartures: 1.055533532, searchVolume: 2192340, mediaCost: 7.5, weightedScore: 210.6013891, splitPercentage: 6.8402801 },
+            'China': { touristDepartures: 0.108560771, searchVolume: 54110, mediaCost: 11.5, weightedScore: 211.9914793, splitPercentage: 6.8854299 },
+            'Saudi Arabia': { touristDepartures: 0.715873182, searchVolume: 665560, mediaCost: 6.5, weightedScore: 202.2057001, splitPercentage: 6.5675902 },
+            'Russia': { touristDepartures: 0.314931072, searchVolume: 2488838, mediaCost: 3.8, weightedScore: 193.9837985, splitPercentage: 6.3005449 },
+            'Kuwait': { touristDepartures: 0.672424597, searchVolume: 319690, mediaCost: 5.2, weightedScore: 55.15570774, splitPercentage: 1.7914435 },
+            'India': { touristDepartures: 0.018503283, searchVolume: 6910650, mediaCost: 3.5, weightedScore: 199.5277353, splitPercentage: 6.4806106 }
+        };
+
+        // Initialize budget table
+        function initializeBudgetTable() {
+            const table = document.getElementById('budgetTable');
+            const allCountries = [...countries.tier1, ...countries.tier2];
+            
+            // Create spreadsheet-like table
+            let html = `
+                <thead>
+                    <tr>
+                        <th class="spreadsheet-cell spreadsheet-header">Country</th>
+                        <th class="spreadsheet-cell spreadsheet-header">Tier</th>
+                        <th class="spreadsheet-cell spreadsheet-header">Tourist Departures/Population</th>
+                        <th class="spreadsheet-cell spreadsheet-header">Search Volume - 'Dubai'</th>
+                        <th class="spreadsheet-cell spreadsheet-header">Media Cost</th>
+                        <th class="spreadsheet-cell spreadsheet-header">Weighted Score</th>
+                        <th class="spreadsheet-cell spreadsheet-header">% Split</th>
+                        <th class="spreadsheet-cell spreadsheet-header">Country Budget (AED)</th>
+                    </tr>
+                </thead>
+                <tbody>
+            `;
+            
+            allCountries.forEach((country, index) => {
+                const isTier1 = countries.tier1.includes(country);
+                const budgetData = budgetAllocationData[country.name];
+                
+                if (budgetData) {
+                    html += `
+                        <tr>
+                            <td class="spreadsheet-cell font-medium">${country.name}</td>
+                            <td class="spreadsheet-cell">
+                                <span class="px-2 py-1 text-xs rounded ${isTier1 ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}">
+                                    Tier ${isTier1 ? '1' : '2'}
+                                </span>
+                            </td>
+                            <td class="spreadsheet-cell">${budgetData.touristDepartures.toFixed(6)}</td>
+                            <td class="spreadsheet-cell">${budgetData.searchVolume.toLocaleString()}</td>
+                            <td class="spreadsheet-cell">${budgetData.mediaCost}</td>
+                            <td class="spreadsheet-cell font-semibold">${budgetData.weightedScore.toFixed(2)}</td>
+                            <td class="spreadsheet-cell">${budgetData.splitPercentage.toFixed(4)}%</td>
+                            <td class="spreadsheet-cell country-budget font-semibold" data-percentage="${budgetData.splitPercentage}">
+                                AED ${(5000000 * budgetData.splitPercentage / 100).toLocaleString()}
+                            </td>
+                        </tr>
+                    `;
+                }
+            });
+            
+            html += '</tbody>';
+            table.innerHTML = html;
+            
+            // Update country budgets when total budget changes
+            const totalBudgetInput = document.getElementById('totalBudgetInput');
+            const updateBudgets = function() {
+                const totalBudget = parseInt(totalBudgetInput.value) || 0;
+                document.querySelectorAll('.country-budget').forEach(cell => {
+                    const percentage = parseFloat(cell.dataset.percentage);
+                    const countryBudget = Math.round(totalBudget * percentage / 100);
+                    cell.textContent = 'AED ' + countryBudget.toLocaleString();
+                });
+            };
+            
+            totalBudgetInput.addEventListener('input', updateBudgets);
+            totalBudgetInput.addEventListener('change', updateBudgets);
+            
+            // Initial update
+            setTimeout(updateBudgets, 100);
+        }
+
+        // Initialize world map
+        function initializeWorldMap() {
+            worldMap = L.map('worldMap').setView([25, 45], 2.5);
+            
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors',
+                maxZoom: 18
+            }).addTo(worldMap);
+            
+            // Add Dubai marker
+            const abuDhabiIcon = L.divIcon({
+                html: '<div style="background-color: #dc2626; width: 20px; height: 20px; border-radius: 50%; border: 3px solid white; box-shadow: 0 3px 8px rgba(0,0,0,0.4);"></div>',
+                className: 'custom-div-icon',
+                iconSize: [20, 20],
+                iconAnchor: [10, 10]
+            });
+            
+            const abuDhabiMarker = L.marker([24.4539, 54.3773], {icon: abuDhabiIcon})
+                .addTo(worldMap)
+                .bindPopup('<div style="font-weight: bold; font-size: 16px; color: #dc2626;">Dubai</div><div style="font-size: 12px; color: #6b7280; margin-top: 4px;">Tourism Hub - UAE</div>', {
+                    className: 'custom-popup'
+                });
+            
+            // Add country markers
+            const allCountries = [...countries.tier1, ...countries.tier2];
+            allCountries.forEach(country => {
+                const isTier1 = countries.tier1.includes(country);
+                const perception = perceptionScores[country.name];
+                
+                const icon = L.divIcon({
+                    html: `<div style="background-color: ${isTier1 ? '#10b981' : '#f59e0b'}; width: 18px; height: 18px; border-radius: 50%; border: 3px solid white; box-shadow: 0 3px 8px rgba(0,0,0,0.4); transition: all 0.2s; cursor: pointer;" onmouseover="this.style.width='24px';this.style.height='24px';this.style.border='4px solid white';" onmouseout="this.style.width='18px';this.style.height='18px';this.style.border='3px solid white';"></div>`,
+                    className: 'custom-div-icon',
+                    iconSize: [18, 18],
+                    iconAnchor: [9, 9]
+                });
+                
+                let popupContent = `
+                    <div style="min-width: 250px; max-width: 300px;">
+                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                            <img src="https://flagcdn.com/w40/${country.code}.png" alt="${country.name}" style="width: 32px; height: 24px; object-fit: cover; border-radius: 4px;">
+                            <div>
+                                <div style="font-weight: bold; font-size: 16px;">${country.name}</div>
+                                <div style="font-size: 12px; color: ${isTier1 ? '#059669' : '#d97706'};">Tier ${isTier1 ? '1' : '2'}</div>
+                            </div>
+                        </div>
+                `;
+                
+                if (perception) {
+                    popupContent += `
+                        <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #e5e7eb;">
+                            <div style="font-size: 14px; font-weight: 600; margin-bottom: 4px;">Perception Score: ${perception.score}/100</div>
+                            <div style="font-size: 12px; color: #6b7280; line-height: 1.4;">${perception.explanation}</div>
+                        </div>
+                    `;
+                }
+                
+                popupContent += `
+                    <div style="margin-top: 12px; font-size: 11px; color: #9ca3af;">Click marker to view detailed analytics</div>
+                    </div>
+                `;
+                
+                const marker = L.marker([country.lat, country.lng], {icon: icon})
+                    .addTo(worldMap)
+                    .bindPopup(popupContent, {
+                        maxWidth: 300,
+                        className: 'custom-popup',
+                        closeButton: true,
+                        autoPan: true
+                    });
+                
+                // Add hover events to show popup
+                marker.on('mouseover', function(e) {
+                    this.openPopup();
+                });
+                
+                marker.on('mouseout', function(e) {
+                    // Keep popup open for a short time to allow interaction
+                    setTimeout(() => {
+                        if (!this.getPopup().isOpen() || !this.getPopup()._container || !this.getPopup()._container.matches(':hover')) {
+                            this.closePopup();
+                        }
+                    }, 500);
+                });
+                
+                marker.on('click', function() {
+                    selectCountry(country);
+                    this.closePopup();
+                });
+            });
+        }
+
         // Event listeners
         document.getElementById('tier1Btn').addEventListener('click', () => renderCountryList('tier1'));
         document.getElementById('tier2Btn').addEventListener('click', () => renderCountryList('tier2'));
-        document.getElementById('allBtn').addEventListener('click', () => renderCountryList('all'));
+        document.getElementById('allBtn').addEventListener('click', () => {
+            // Refresh the page when All button is clicked
+            location.reload();
+        });
         document.getElementById('searchInput').addEventListener('input', () => renderCountryList('all'));
 
-        // Update budget chart when budget changes
-        function updateBudgetChart() {
-            const budgetInput = document.getElementById('budgetInput');
-            const value = budgetInput.value.replace(/,/g, '');
+        // Axis selector event listeners
+        document.getElementById('xAxisSelect').addEventListener('change', initializeBubbleChart);
+        document.getElementById('yAxisSelect').addEventListener('change', initializeBubbleChart);
+        document.getElementById('bubbleSizeSelect').addEventListener('change', initializeBubbleChart);
+
+        // Resource loading check
+        function checkResources() {
+            const resources = {
+                chartjs: typeof Chart !== 'undefined',
+                leaflet: typeof L !== 'undefined',
+                tailwind: document.querySelector('.bg-gray-50') !== null || getComputedStyle(document.body).backgroundColor !== 'rgba(0, 0, 0, 0)'
+            };
             
-            if (!isNaN(value) && value > 0) {
-                // Format the input with commas
-                budgetInput.value = parseFloat(value).toLocaleString();
+            console.log('Resource status:', resources);
+            return resources.chartjs && resources.leaflet;
+        }
+        
+        // Wait for all resources to load
+        function initializeApp() {
+            console.log('Initializing Country Decoder...');
+            
+            if (!checkResources()) {
+                console.log('Resources still loading, retrying...');
+                setTimeout(initializeApp, 1000);
+                return;
+            }
+            
+            try {
+                // Hide loading and show content
+                document.getElementById('loadingScreen').style.display = 'none';
+                document.getElementById('mainContent').style.display = 'block';
                 
-                // Update the chart legend
-                if (budgetChart) {
-                    budgetChart.update();
-                }
+                // Initialize components
+                renderCountryList('all');
+                setTimeout(() => {
+                    initializeWorldMap();
+                    console.log('Country Decoder: World map initialized successfully');
+                }, 200);
+                
+                console.log('Country Decoder: Application loaded successfully');
+            } catch (error) {
+                console.error('Error initializing app:', error);
+                // Show error message
+                document.getElementById('loadingScreen').innerHTML = `
+                    <div class="loading-content">
+                        <div style="color: #dc2626; font-size: 2rem; margin-bottom: 16px;">⚠️</div>
+                        <h2 style="font-size: 1.25rem; font-weight: 600; color: #dc2626; margin-bottom: 8px;">Loading Error</h2>
+                        <p style="color: #6b7280; margin: 0;">Please refresh the page or check your internet connection.</p>
+                        <button onclick="location.reload()" style="margin-top: 16px; padding: 8px 16px; background: #2563eb; color: white; border: none; border-radius: 4px; cursor: pointer;">Retry</button>
+                    </div>
+                `;
             }
         }
-
-        // Initialize
-        renderCountryList('all');
+        
+        // Multiple initialization attempts
+        let initAttempts = 0;
+        function tryInitialize() {
+            initAttempts++;
+            if (initAttempts > 10) {
+                console.error('Failed to initialize after 10 attempts');
+                return;
+            }
+            
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', function() {
+                    setTimeout(initializeApp, 200);
+                });
+            } else {
+                setTimeout(initializeApp, 200);
+            }
+        }
+        
+        // Start initialization
+        tryInitialize();
     </script>
 </body>
 </html>
