@@ -18,20 +18,29 @@ const GEO_URL = 'https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json'
  * to our internal two-letter country code.
  */
 const ISO_NUMERIC_TO_CODE: Record<string, string> = {
-  '682': 'sa',
-  '048': 'bh',
-  '512': 'om',
-  '634': 'qa',
-  '414': 'kw',
-  '643': 'ru',
-  '156': 'cn',
-  '826': 'gb',
-  '250': 'fr',
-  '276': 'de',
-  '380': 'it',
-  '756': 'ch',
-  '724': 'es',
-  '616': 'pl',
+  '682': 'sa', // Saudi Arabia
+  '643': 'ru', // Russia
+  '826': 'gb', // United Kingdom
+  '250': 'fr', // France
+  '276': 'de', // Germany
+  '380': 'it', // Italy
+  '756': 'ch', // Switzerland
+  '724': 'es', // Spain
+  '616': 'pl', // Poland
+  '784': 'ae', // United Arab Emirates
+  '840': 'us', // United States
+  '528': 'nl', // Netherlands
+  '398': 'kz', // Kazakhstan
+  '056': 'be', // Belgium
+  '036': 'au', // Australia
+  '040': 'at', // Austria
+  '356': 'in', // India
+  '792': 'tr', // Turkey
+  '642': 'ro', // Romania
+  '710': 'za', // South Africa
+  '203': 'cz', // Czechia
+  '348': 'hu', // Hungary
+  '818': 'eg', // Egypt
 };
 
 /**
@@ -44,20 +53,11 @@ const ISO_NUMERIC_UNPADDED_TO_CODE: Record<string, string> = Object.fromEntries(
 
 /** ISO Alpha-3 to our country code (fallback for geo.properties.ISO_A3). */
 const ISO_A3_TO_CODE: Record<string, string> = {
-  SAU: 'sa',
-  BHR: 'bh',
-  OMN: 'om',
-  QAT: 'qa',
-  KWT: 'kw',
-  RUS: 'ru',
-  CHN: 'cn',
-  GBR: 'gb',
-  FRA: 'fr',
-  DEU: 'de',
-  ITA: 'it',
-  CHE: 'ch',
-  ESP: 'es',
-  POL: 'pl',
+  SAU: 'sa', RUS: 'ru', GBR: 'gb', FRA: 'fr', DEU: 'de',
+  ITA: 'it', CHE: 'ch', ESP: 'es', POL: 'pl',
+  ARE: 'ae', USA: 'us', NLD: 'nl', KAZ: 'kz', BEL: 'be',
+  AUS: 'au', AUT: 'at', IND: 'in', TUR: 'tr', ROU: 'ro',
+  ZAF: 'za', CZE: 'cz', HUN: 'hu', EGY: 'eg',
 };
 
 const TARGET_FILL = '#93c5fd'; // blue-300

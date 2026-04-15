@@ -53,6 +53,26 @@ export function computeAllocations(
   }));
 }
 
+// Dubai (DXB) reference coordinates for proximity calculations.
+export const DUBAI_LAT = 25.2048;
+export const DUBAI_LNG = 55.2708;
+
+// Great-circle distance in kilometres between two lat/lng points.
+export function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): number {
+  const R = 6371;
+  const toRad = (d: number) => (d * Math.PI) / 180;
+  const dLat = toRad(lat2 - lat1);
+  const dLng = toRad(lng2 - lng1);
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(a));
+}
+
+export function distanceToDubaiKm(lat: number, lng: number): number {
+  return haversineKm(lat, lng, DUBAI_LAT, DUBAI_LNG);
+}
+
 // ISO Alpha-2 to ISO Alpha-3 mapping for react-simple-maps (which uses Alpha-3)
 export const countryCodeMap: Record<string, string> = {
   sa: 'SAU', bh: 'BHR', om: 'OMN', qa: 'QAT', kw: 'KWT',

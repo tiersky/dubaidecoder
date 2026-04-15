@@ -6,6 +6,11 @@ export interface Country {
   lng: number;
   millionairesRatio: number;
   internationalTravellers: number;
+  tourismExpenditureUsd: number;
+  avgSpendPerTripUsd: number;
+  gdpPppPerCapitaUsd: number;
+  dailyFlightsToDxb: number;
+  dailySeatsToDxb: number;
   luxurySpendPerCapita: number;
   novTravelVolume: number;
   googleTravelIntent: number;

@@ -3,6 +3,7 @@
 import { Country } from "@/types";
 import CountryHeader from "@/components/organisms/CountryHeader";
 import KPIGrid from "@/components/organisms/KPIGrid";
+import MobilitySection from "@/components/organisms/MobilitySection";
 import SeasonalityImage from "@/components/organisms/SeasonalityImage";
 
 interface CountryDetailProps {
@@ -24,6 +25,11 @@ export default function CountryDetail({
       {/* KPI Cards */}
       <div className="opacity-0 animate-fade-in-up animate-delay-1">
         <KPIGrid country={country} />
+      </div>
+
+      {/* Mobility */}
+      <div className="opacity-0 animate-fade-in-up animate-delay-2">
+        <MobilitySection country={country} />
       </div>
 
       {/* Seasonality Image */}

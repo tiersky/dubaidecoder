@@ -46,8 +46,15 @@ export default function KPIGrid({ country }: KPIGridProps) {
       />
 
       <MetricCard
-        label="Luxury Spend per Capita"
-        value={`$${country.luxurySpendPerCapita.toLocaleString()}`}
+        label="Tourism Expenditure"
+        value={
+          country.tourismExpenditureUsd >= 1_000_000_000
+            ? `$${(country.tourismExpenditureUsd / 1_000_000_000).toFixed(1)}B`
+            : country.tourismExpenditureUsd >= 1_000_000
+            ? `$${(country.tourismExpenditureUsd / 1_000_000).toFixed(1)}M`
+            : `$${country.tourismExpenditureUsd.toLocaleString()}`
+        }
+        tooltip="Total annual spending (USD) by this country's outbound travellers on international trips."
         icon={
           <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path
@@ -61,15 +68,16 @@ export default function KPIGrid({ country }: KPIGridProps) {
       />
 
       <MetricCard
-        label="November Travel Volume"
-        value={country.novTravelVolume.toLocaleString()}
+        label="Avg. Spend per Trip"
+        value={`$${country.avgSpendPerTripUsd.toLocaleString()}`}
+        tooltip="Average USD spent per international trip by travellers from this country."
         icon={
           <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path
               strokeLinecap="round"
               strokeLinejoin="round"
               strokeWidth={1.5}
-              d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5"
+              d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
             />
           </svg>
         }
@@ -91,15 +99,16 @@ export default function KPIGrid({ country }: KPIGridProps) {
       />
 
       <MetricCard
-        label="SV Dubai Luxury Shopping"
-        value={country.svDubaiLuxuryShopping.toLocaleString()}
+        label="GDP (PPP) per Capita"
+        value={`$${country.gdpPppPerCapitaUsd.toLocaleString()}`}
+        tooltip="Gross Domestic Product per person at Purchasing Power Parity (USD) — reflects real purchasing power and standard of living."
         icon={
           <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path
               strokeLinecap="round"
               strokeLinejoin="round"
               strokeWidth={1.5}
-              d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 01-1.12-1.243l1.264-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007zM8.625 10.5a.375.375 0 11-.75 0 .375.375 0 01.75 0zm7.5 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"
+              d="M3 3v18h18M7 14l4-4 4 4 5-5"
             />
           </svg>
         }
