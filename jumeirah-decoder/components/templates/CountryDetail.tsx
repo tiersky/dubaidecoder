@@ -4,7 +4,7 @@ import { Country } from "@/types";
 import CountryHeader from "@/components/organisms/CountryHeader";
 import KPIGrid from "@/components/organisms/KPIGrid";
 import MobilitySection from "@/components/organisms/MobilitySection";
-import SeasonalityImage from "@/components/organisms/SeasonalityImage";
+import ConfidenceScoreChart from "@/components/organisms/ConfidenceScoreChart";
 
 interface CountryDetailProps {
   country: Country;
@@ -32,9 +32,9 @@ export default function CountryDetail({
         <MobilitySection country={country} />
       </div>
 
-      {/* Seasonality Image */}
+      {/* Confidence Score */}
       <div className="opacity-0 animate-fade-in-up animate-delay-2">
-        <SeasonalityImage countryName={country.name} />
+        <ConfidenceScoreChart countryName={country.name} />
       </div>
     </div>
   );

@@ -76,6 +76,9 @@ export default function BudgetTable({
                 GDP (PPP)/Cap
               </th>
               <th className="px-3 py-3 text-right uppercase tracking-wider text-slate-400 font-medium">
+                Confidence
+              </th>
+              <th className="px-3 py-3 text-right uppercase tracking-wider text-slate-400 font-medium">
                 Weighted Score
               </th>
               <th className="px-3 py-3 text-right uppercase tracking-wider text-slate-400 font-medium">
@@ -141,6 +144,9 @@ export default function BudgetTable({
                   </td>
                   <td className={numericCell}>
                     ${row.country.gdpPppPerCapitaUsd.toLocaleString()}
+                  </td>
+                  <td className={numericCell}>
+                    {row.country.confidenceScore.toFixed(2)}
                   </td>
                   <td className={numericCell}>
                     {row.enabled ? row.weightedScore.toFixed(2) : '—'}

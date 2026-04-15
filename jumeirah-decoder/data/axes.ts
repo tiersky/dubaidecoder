@@ -6,6 +6,7 @@ export const axisOptions: AxisOption[] = [
   { value: 'avgSpendPerTripUsd', label: 'Avg. Spend per Trip' },
   { value: 'googleTravelIntent', label: 'Google Travel Intent' },
   { value: 'gdpPppPerCapitaUsd', label: 'GDP (PPP) per Capita' },
+  { value: 'confidenceScore', label: 'Confidence Score' },
   { value: 'population', label: 'Population' },
 ];
 
@@ -16,5 +17,6 @@ export const bubbleSizeOptions: AxisOption[] = [
   { value: 'avgSpendPerTripUsd', label: 'Avg. Spend per Trip' },
   { value: 'googleTravelIntent', label: 'Google Travel Intent' },
   { value: 'gdpPppPerCapitaUsd', label: 'GDP (PPP) per Capita' },
+  { value: 'confidenceScore', label: 'Confidence Score' },
   { value: 'population', label: 'Population' },
 ];

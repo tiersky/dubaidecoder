@@ -128,6 +128,23 @@ export default function KPIGrid({ country }: KPIGridProps) {
           </svg>
         }
       />
+
+      <MetricCard
+        label="Confidence Score"
+        value={country.confidenceScore.toFixed(2)}
+        sublabel="Last week (consolidated)"
+        tooltip="MENA-wide consolidated confidence score for the latest week — blends social, recorded search and media signals. Single value applied across all markets until per-country data lands."
+        icon={
+          <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={1.5}
+              d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
+          </svg>
+        }
+      />
     </div>
   );
 }

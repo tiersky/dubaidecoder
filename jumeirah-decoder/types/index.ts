@@ -16,6 +16,7 @@ export interface Country {
   googleTravelIntent: number;
   svDubaiLuxuryShopping: number;
   gdpGrowth: number;
+  confidenceScore: number;
   finalWeightedScore: number;
   percentSplit: number;
   budgetSplit: number;
@@ -40,6 +41,7 @@ export const INDEX_KEYS = [
   'avgSpendPerTripUsd',
   'googleTravelIntent',
   'gdpPppPerCapitaUsd',
+  'confidenceScore',
 ] as const;
 
 export type IndexKey = typeof INDEX_KEYS[number];
@@ -50,6 +52,7 @@ export const INDEX_LABELS: Record<IndexKey, string> = {
   avgSpendPerTripUsd: 'Avg. Spend per Trip',
   googleTravelIntent: 'Google Travel Intent',
   gdpPppPerCapitaUsd: 'GDP (PPP) per Capita',
+  confidenceScore: 'Confidence Score',
 };
 
 export const DEFAULT_MODEL_WEIGHTS: ModelWeights = {
@@ -58,4 +61,5 @@ export const DEFAULT_MODEL_WEIGHTS: ModelWeights = {
   avgSpendPerTripUsd: 20,
   googleTravelIntent: 20,
   gdpPppPerCapitaUsd: 20,
+  confidenceScore: 20,
 };
