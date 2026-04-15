@@ -1,4 +1,4 @@
-import { Country, ModelWeights, INDEX_KEYS } from '@/types';
+import { Country, ModelWeights, INDEX_KEYS, IndexKey } from '@/types';
 
 export function calculateAverage(countries: Country[], metric: keyof Country): number {
   const values = countries.map(c => {
@@ -31,15 +31,28 @@ export interface Allocation {
   budget: number;
 }
 
+// Compute allocations from raw per-country fields. Each metric is normalized
+// against the max across the *active* country set (so toggling a country
+// off automatically rescales the remaining ones), then weighted-summed.
 export function computeAllocations(
   countries: Country[],
   weights: ModelWeights,
   totalBudget: number
 ): Allocation[] {
+  if (countries.length === 0) return [];
+
+  const maxByKey: Record<IndexKey, number> = {} as Record<IndexKey, number>;
+  for (const key of INDEX_KEYS) {
+    const max = Math.max(...countries.map((c) => Number(c[key]) || 0));
+    maxByKey[key] = max;
+  }
+
   const scores = countries.map((c) => {
     let score = 0;
     for (const key of INDEX_KEYS) {
-      score += (weights[key] ?? 0) * (c.indices[key] ?? 0);
+      const max = maxByKey[key];
+      const normalized = max > 0 ? (Number(c[key]) || 0) / max : 0;
+      score += (weights[key] ?? 0) * normalized;
     }
     return { name: c.name, code: c.code, weightedScore: score };
   });

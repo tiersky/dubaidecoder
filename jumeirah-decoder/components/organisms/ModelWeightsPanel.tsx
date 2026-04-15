@@ -49,10 +49,12 @@ export default function ModelWeightsPanel({
       </div>
 
       {enabled && (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-x-3 gap-y-4">
           {INDEX_KEYS.map((key) => (
-            <div key={key} className="space-y-1">
-              <label className="text-xs text-slate-500 font-medium leading-tight block">
+            <div key={key} className="flex flex-col">
+              {/* Fixed-height label slot keeps inputs aligned across the row
+                  even when labels wrap to a second line. */}
+              <label className="text-xs text-slate-500 font-medium leading-tight block min-h-[2.25rem]">
                 {INDEX_LABELS[key]}
               </label>
               <input

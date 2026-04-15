@@ -35,43 +35,27 @@ export interface AxisOption {
 export type ModelWeights = Record<string, number>;
 
 export const INDEX_KEYS = [
-  'millionairesRatio',
-  'luxurySpend',
-  'novTravelVolume',
+  'internationalTravellers',
+  'tourismExpenditureUsd',
+  'avgSpendPerTripUsd',
   'googleTravelIntent',
-  'svDubaiLuxuryShopping',
-  'gdpGrowth',
-  'disposableIncome',
-  'mediaCost',
-  'audienceGWI',
-  'marketTiering',
-  'audienceRatio',
+  'gdpPppPerCapitaUsd',
 ] as const;
 
-export const INDEX_LABELS: Record<string, string> = {
-  millionairesRatio: 'Millionaires vs Population',
-  luxurySpend: 'Luxury Spend per Capita',
-  novTravelVolume: 'November Travel Volume',
+export type IndexKey = typeof INDEX_KEYS[number];
+
+export const INDEX_LABELS: Record<IndexKey, string> = {
+  internationalTravellers: 'International Travellers',
+  tourismExpenditureUsd: 'Tourism Expenditure',
+  avgSpendPerTripUsd: 'Avg. Spend per Trip',
   googleTravelIntent: 'Google Travel Intent',
-  svDubaiLuxuryShopping: 'SV Dubai Luxury Shopping',
-  gdpGrowth: 'GDP Growth',
-  disposableIncome: 'Disposable Income',
-  mediaCost: 'Media Cost',
-  audienceGWI: 'Audience Size (GWI)',
-  marketTiering: 'Market Tiering',
-  audienceRatio: 'Audience Ratio',
+  gdpPppPerCapitaUsd: 'GDP (PPP) per Capita',
 };
 
 export const DEFAULT_MODEL_WEIGHTS: ModelWeights = {
-  millionairesRatio: 5,
-  luxurySpend: 30,
-  novTravelVolume: 30,
-  googleTravelIntent: 30,
-  svDubaiLuxuryShopping: 20,
-  gdpGrowth: 5,
-  disposableIncome: 5,
-  mediaCost: 1,
-  audienceGWI: 30,
-  marketTiering: 30,
-  audienceRatio: 5,
+  internationalTravellers: 20,
+  tourismExpenditureUsd: 20,
+  avgSpendPerTripUsd: 20,
+  googleTravelIntent: 20,
+  gdpPppPerCapitaUsd: 20,
 };
