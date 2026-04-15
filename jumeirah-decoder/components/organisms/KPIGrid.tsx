@@ -131,9 +131,15 @@ export default function KPIGrid({ country }: KPIGridProps) {
 
       <MetricCard
         label="Confidence Score"
-        value={country.confidenceScore.toFixed(2)}
-        sublabel="Last week (consolidated)"
-        tooltip="MENA-wide consolidated confidence score for the latest week — blends social, recorded search and media signals. Single value applied across all markets until per-country data lands."
+        value={
+          country.confidenceScore !== null
+            ? country.confidenceScore.toFixed(2)
+            : 'N/A'
+        }
+        sublabel={
+          country.confidenceScore !== null ? 'Latest week' : 'Not tracked yet'
+        }
+        tooltip="Per-country weekly confidence score — latest available week. Tracked for 9 markets today; remaining markets show N/A until data lands."
         icon={
           <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path

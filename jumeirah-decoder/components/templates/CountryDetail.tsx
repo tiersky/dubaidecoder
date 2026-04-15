@@ -34,7 +34,10 @@ export default function CountryDetail({
 
       {/* Confidence Score */}
       <div className="opacity-0 animate-fade-in-up animate-delay-2">
-        <ConfidenceScoreChart countryName={country.name} />
+        <ConfidenceScoreChart
+          countryCode={country.code}
+          countryName={country.name}
+        />
       </div>
     </div>
   );

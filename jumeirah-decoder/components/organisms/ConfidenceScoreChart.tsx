@@ -12,7 +12,11 @@ import {
 } from 'chart.js';
 import { Line } from 'react-chartjs-2';
 import GlassCard from '@/components/atoms/GlassCard';
-import { confidenceWeeks, LATEST_CONFIDENCE_SCORE } from '@/data/confidenceScore';
+import {
+  confidenceWeekLabels,
+  getConfidenceSeries,
+  getLatestConfidence,
+} from '@/data/confidenceScore';
 
 ChartJS.register(
   CategoryScale,
@@ -25,39 +29,63 @@ ChartJS.register(
 );
 
 interface ConfidenceScoreChartProps {
+  countryCode: string;
   countryName: string;
 }
 
-const SERIES = [
-  { key: 'social', label: 'Social', color: '#3b82f6' },
-  { key: 'recordedSearch', label: 'Recorded Search', color: '#10b981' },
-  { key: 'consolidated', label: 'Consolidated', color: '#8b5cf6' },
-] as const;
-
 export default function ConfidenceScoreChart({
+  countryCode,
   countryName,
 }: ConfidenceScoreChartProps) {
-  const labels = confidenceWeeks.map((w) => w.weekLabel);
+  const series = getConfidenceSeries(countryCode);
+  const latest = getLatestConfidence(countryCode);
+
+  if (!series || latest === null) {
+    return (
+      <GlassCard padding="p-5">
+        <div className="flex items-start justify-between mb-4">
+          <div>
+            <h3 className="text-sm font-semibold text-slate-800">
+              Confidence Score Trend
+            </h3>
+            <p className="text-xs text-slate-400 mt-0.5">
+              Weekly index • {countryName}
+            </p>
+          </div>
+          <div className="text-right">
+            <p className="text-[10px] uppercase tracking-wider text-slate-400 font-medium">
+              Latest
+            </p>
+            <p className="text-2xl font-bold text-slate-300 tabular-nums leading-tight">
+              N/A
+            </p>
+          </div>
+        </div>
+        <div className="flex h-[260px] items-center justify-center text-sm text-slate-400">
+          Confidence score data not available for {countryName}.
+        </div>
+      </GlassCard>
+    );
+  }
 
   const data = {
-    labels,
-    datasets: SERIES.map((s) => {
-      const isConsolidated = s.key === 'consolidated';
-      return {
-        label: s.label,
-        data: confidenceWeeks.map((w) => w[s.key] as number),
-        borderColor: s.color,
-        backgroundColor: isConsolidated ? `${s.color}22` : 'transparent',
-        borderWidth: isConsolidated ? 2.5 : 2,
+    labels: confidenceWeekLabels,
+    datasets: [
+      {
+        label: countryName,
+        data: series,
+        borderColor: '#8b5cf6',
+        backgroundColor: 'rgba(139, 92, 246, 0.12)',
+        borderWidth: 2.5,
         pointRadius: 3,
         pointHoverRadius: 5,
-        pointBackgroundColor: s.color,
+        pointBackgroundColor: '#8b5cf6',
         pointBorderColor: '#fff',
         pointBorderWidth: 1.5,
-        tension: 0.4,
-        fill: isConsolidated,
-      };
-    }),
+        tension: 0.35,
+        fill: true,
+      },
+    ],
   };
 
   const options = {
@@ -65,17 +93,7 @@ export default function ConfidenceScoreChart({
     maintainAspectRatio: false,
     interaction: { mode: 'index' as const, intersect: false },
     plugins: {
-      legend: {
-        position: 'bottom' as const,
-        labels: {
-          color: '#64748b',
-          font: { family: 'Outfit', size: 11 },
-          padding: 12,
-          usePointStyle: true,
-          pointStyle: 'circle',
-          boxWidth: 8,
-        },
-      },
+      legend: { display: false },
       tooltip: {
         backgroundColor: 'rgba(15, 23, 42, 0.92)',
         titleFont: { family: 'Outfit', size: 12 },
@@ -83,8 +101,8 @@ export default function ConfidenceScoreChart({
         padding: 10,
         cornerRadius: 8,
         callbacks: {
-          label: (ctx: { dataset: { label?: string }; parsed: { y: number | null } }) =>
-            `${ctx.dataset.label}: ${(ctx.parsed.y ?? 0).toFixed(2)}`,
+          label: (ctx: { parsed: { y: number | null } }) =>
+            `Confidence: ${(ctx.parsed.y ?? 0).toFixed(2)}`,
         },
       },
       datalabels: { display: false },
@@ -95,6 +113,9 @@ export default function ConfidenceScoreChart({
         ticks: {
           color: '#94a3b8',
           font: { family: 'Outfit', size: 10 },
+          maxRotation: 0,
+          autoSkip: true,
+          autoSkipPadding: 12,
         },
         border: { display: false },
       },
@@ -124,15 +145,15 @@ export default function ConfidenceScoreChart({
             Confidence Score Trend
           </h3>
           <p className="text-xs text-slate-400 mt-0.5">
-            MENA-wide weekly index • applied to {countryName}
+            Weekly index • {countryName}
           </p>
         </div>
         <div className="text-right">
           <p className="text-[10px] uppercase tracking-wider text-slate-400 font-medium">
-            Latest Consolidated
+            Latest
           </p>
           <p className="text-2xl font-bold text-slate-900 tabular-nums leading-tight">
-            {LATEST_CONFIDENCE_SCORE.toFixed(2)}
+            {latest.toFixed(2)}
           </p>
         </div>
       </div>

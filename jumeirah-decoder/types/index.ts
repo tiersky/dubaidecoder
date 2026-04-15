@@ -16,7 +16,7 @@ export interface Country {
   googleTravelIntent: number;
   svDubaiLuxuryShopping: number;
   gdpGrowth: number;
-  confidenceScore: number;
+  confidenceScore: number | null;
   finalWeightedScore: number;
   percentSplit: number;
   budgetSplit: number;

@@ -41,17 +41,25 @@ export function computeAllocations(
 ): Allocation[] {
   if (countries.length === 0) return [];
 
+  // Compute per-metric max from countries that actually have a value for it.
+  // Null values are treated as "no data" and contribute nothing to the country's
+  // score (rather than being coerced to 0, which would penalize them). They're
+  // also excluded from the per-metric max so coverage gaps don't skew the scale.
   const maxByKey: Record<IndexKey, number> = {} as Record<IndexKey, number>;
   for (const key of INDEX_KEYS) {
-    const max = Math.max(...countries.map((c) => Number(c[key]) || 0));
-    maxByKey[key] = max;
+    const values = countries
+      .map((c) => c[key])
+      .filter((v): v is number => typeof v === 'number');
+    maxByKey[key] = values.length > 0 ? Math.max(...values) : 0;
   }
 
   const scores = countries.map((c) => {
     let score = 0;
     for (const key of INDEX_KEYS) {
+      const raw = c[key];
+      if (typeof raw !== 'number') continue;
       const max = maxByKey[key];
-      const normalized = max > 0 ? (Number(c[key]) || 0) / max : 0;
+      const normalized = max > 0 ? raw / max : 0;
       score += (weights[key] ?? 0) * normalized;
     }
     return { name: c.name, code: c.code, weightedScore: score };

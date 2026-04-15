@@ -1,24 +1,32 @@
-// MENA-wide weekly confidence scores (Confidence Score data tables, week 6).
-// Source sheet: "Overall". Same series shown for every country until per-country
-// data is available.
+// Per-country weekly confidence scores (Confidence Score data tables, week 6
+// — "Overall" sheet). Only 9 markets are tracked today; the remaining markets
+// resolve to null and surface as "N/A" in the UI.
 
-export interface ConfidenceWeek {
-  weekIndex: number;
-  weekLabel: string; // e.g. "Mar 02 – Mar 08"
-  social: number;
-  recordedSearch: number;
-  media: number;
-  consolidated: number;
-}
-
-export const confidenceWeeks: ConfidenceWeek[] = [
-  { weekIndex: 1, weekLabel: 'Mar 02 – Mar 08', social: 46.81, recordedSearch: 47.33, media: 45.74, consolidated: 42.45 },
-  { weekIndex: 2, weekLabel: 'Mar 09 – Mar 15', social: 44.38, recordedSearch: 53.50, media: 51.76, consolidated: 45.67 },
-  { weekIndex: 3, weekLabel: 'Mar 16 – Mar 22', social: 43.70, recordedSearch: 65.34, media: 66.83, consolidated: 51.57 },
-  { weekIndex: 4, weekLabel: 'Mar 23 – Mar 29', social: 44.04, recordedSearch: 59.61, media: 59.26, consolidated: 49.98 },
-  { weekIndex: 5, weekLabel: 'Mar 30 – Apr 05', social: 43.62, recordedSearch: 59.71, media: 47.58, consolidated: 45.41 },
-  { weekIndex: 6, weekLabel: 'Apr 06 – Apr 12', social: 44.09, recordedSearch: 57.84, media: 31.05, consolidated: 40.88 },
+export const confidenceWeekLabels: string[] = [
+  '01/11', '08/11', '15/11', '22/11', '29/11', '06/12', '13/12', '20/12',
+  '27/12', '03/01', '10/01', '17/01', '24/01', '31/01', '07/02', '14/02',
+  '21/02', '28/02', '07/03', '14/03', '21/03', '28/03', '04/04',
 ];
 
-export const LATEST_CONFIDENCE_SCORE =
-  confidenceWeeks[confidenceWeeks.length - 1].consolidated;
+// Country code (Country.code) → 23 weekly values aligned to confidenceWeekLabels.
+export const confidenceByCountry: Record<string, number[]> = {
+  fr: [130.20, 143.85, 126.65, 167.96, 181.82, 154.50, 157.53, 143.99, 158.00, 122.40, 118.80, 164.42, 190.08, 182.95, 156.81, 159.19, 169.90, 584.30, 266.15, 179.18, 89.94, 46.30, 24.73],
+  de: [280.67, 277.62, 278.64, 337.32, 330.00, 343.08, 304.03, 300.39, 310.03, 284.39, 287.39, 331.41, 377.12, 332.36, 308.94, 300.88, 319.96, 1275.67, 564.49, 362.36, 171.85, 92.56, 48.93],
+  it: [161.80, 141.21, 175.04, 227.28, 204.88, 220.61, 157.47, 179.49, 235.59, 207.96, 180.49, 224.57, 236.64, 222.68, 177.01, 200.76, 164.57, 964.06, 438.80, 225.62, 130.10, 74.34, 41.88],
+  nl: [197.60, 183.94, 167.56, 248.45, 344.28, 274.10, 241.97, 257.58, 275.24, 222.52, 225.48, 300.51, 318.06, 276.03, 207.69, 181.55, 284.09, 1141.00, 497.30, 251.15, 118.31, 92.09, 49.32],
+  sa: [266.98, 215.14, 245.84, 182.21, 207.70, 240.12, 219.23, 134.45, 135.02, 113.19, 125.40, 141.50, 192.59, 165.53, 116.01, 90.15, 116.98, 503.40, 412.21, 345.77, 234.09, 163.32, 76.82],
+  es: [192.38, 229.01, 225.80, 315.93, 358.33, 345.92, 298.19, 205.67, 265.58, 193.06, 194.96, 277.21, 379.04, 298.26, 264.06, 273.48, 329.53, 1235.71, 572.86, 322.35, 166.64, 101.04, 54.10],
+  ch: [105.43, 85.35, 69.98, 115.96, 78.00, 116.55, 108.40, 114.49, 128.35, 102.39, 135.11, 152.33, 157.77, 100.81, 78.89, 104.05, 103.44, 664.54, 238.63, 110.99, 42.96, 55.16, 31.00],
+  gb: [140.40, 139.00, 141.80, 149.30, 156.40, 154.10, 152.58, 147.80, 196.65, 182.57, 184.01, 184.97, 189.76, 164.98, 163.63, 157.86, 151.41, 803.38, 332.87, 227.97, 126.60, 89.51, 42.71],
+  us: [113.16, 123.93, 130.43, 165.04, 180.52, 177.65, 164.85, 171.06, 174.85, 144.25, 142.83, 140.13, 163.66, 130.93, 105.23, 113.34, 117.33, 399.96, 173.97, 144.21, 74.31, 43.53, 24.27],
+};
+
+export function getLatestConfidence(countryCode: string): number | null {
+  const series = confidenceByCountry[countryCode];
+  if (!series || series.length === 0) return null;
+  return series[series.length - 1];
+}
+
+export function getConfidenceSeries(countryCode: string): number[] | null {
+  return confidenceByCountry[countryCode] ?? null;
+}

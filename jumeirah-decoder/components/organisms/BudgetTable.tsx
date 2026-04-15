@@ -146,7 +146,9 @@ export default function BudgetTable({
                     ${row.country.gdpPppPerCapitaUsd.toLocaleString()}
                   </td>
                   <td className={numericCell}>
-                    {row.country.confidenceScore.toFixed(2)}
+                    {row.country.confidenceScore !== null
+                      ? row.country.confidenceScore.toFixed(2)
+                      : 'N/A'}
                   </td>
                   <td className={numericCell}>
                     {row.enabled ? row.weightedScore.toFixed(2) : '—'}
