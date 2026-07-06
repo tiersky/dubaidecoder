@@ -51,8 +51,8 @@ export default function ModelWeightsPanel({
       {enabled && (
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
           {INDEX_KEYS.map((key) => (
-            <div key={key} className="space-y-1">
-              <label className="text-xs text-slate-500 font-medium leading-tight block">
+            <div key={key} className="flex flex-col">
+              <label className="text-xs text-slate-500 font-medium leading-tight block mb-1 min-h-[2rem]">
                 {INDEX_LABELS[key]}
               </label>
               <input
@@ -64,7 +64,7 @@ export default function ModelWeightsPanel({
                 onChange={(e) =>
                   handleWeightChange(key, Math.max(0, Math.min(100, Number(e.target.value) || 0)))
                 }
-                className="w-full px-2.5 py-1.5 text-sm font-medium text-slate-700 bg-white/60 border border-slate-200/60 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-transparent tabular-nums"
+                className="mt-auto w-full px-2.5 py-1.5 text-sm font-medium text-slate-700 bg-white/60 border border-slate-200/60 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-transparent tabular-nums"
               />
             </div>
           ))}
