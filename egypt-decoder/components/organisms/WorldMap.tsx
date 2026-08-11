@@ -163,7 +163,7 @@ export default function WorldMap({
 
   const buildTooltipContent = useCallback(
     (country: Country): string => {
-      return `${country.name} | Budget: AED ${Math.round(country.budgetSplit).toLocaleString()}`;
+      return `${country.name} | Budget: USD ${Math.round(country.budgetSplit).toLocaleString()}`;
     },
     []
   );

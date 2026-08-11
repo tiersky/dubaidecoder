@@ -86,7 +86,7 @@ export default function BudgetTable({
                 % Split
               </th>
               <th className={headerCell}>
-                Budget (AED)
+                Budget (USD)
               </th>
             </tr>
           </thead>
@@ -159,7 +159,7 @@ export default function BudgetTable({
                     }`}
                   >
                     {row.enabled
-                      ? `AED ${Math.round(row.budget).toLocaleString()}`
+                      ? `USD ${Math.round(row.budget).toLocaleString()}`
                       : '—'}
                   </td>
                 </tr>

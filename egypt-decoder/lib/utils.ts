@@ -8,7 +8,7 @@ export function calculateAverage(countries: Country[], metric: keyof Country): n
   return values.reduce((a, b) => a + b, 0) / values.length;
 }
 
-export function formatCurrency(value: number, currency = 'AED'): string {
+export function formatCurrency(value: number, currency = 'USD'): string {
   return `${currency} ${value.toLocaleString()}`;
 }
 

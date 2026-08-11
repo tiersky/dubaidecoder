@@ -99,7 +99,7 @@ export default function BudgetTreemap({ allocations }: BudgetTreemapProps) {
               if (!d) return '';
               return [
                 `${(d.percentSplit * 100).toFixed(1)}% of budget`,
-                `AED ${Math.round(d.budget).toLocaleString()}`,
+                `USD ${Math.round(d.budget).toLocaleString()}`,
               ];
             },
           },

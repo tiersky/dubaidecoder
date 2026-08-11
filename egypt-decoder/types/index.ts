@@ -18,7 +18,7 @@ export interface Country {
   // Model outputs (workbook values at default weights)
   finalWeightedScore: number;
   percentSplit: number;
-  budgetSplit: number; // AED allocation
+  budgetSplit: number; // USD allocation
   indices: Record<string, number>;
 }
 
