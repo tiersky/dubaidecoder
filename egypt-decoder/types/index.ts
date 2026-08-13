@@ -14,7 +14,7 @@ export interface Country {
   gdpPerCapita: number; // USD (IMF)
   flightSeats: number; // Avg daily flight seating capacity to Egypt (Aviationstack)
   touristDepartures: number; // Total outbound tourist departures
-  marketTier: number; // 10 / 6 / 3 / 1 (Brief)
+  marketTier: number; // Brief tiers; week-6 values range 0.3–50 per market
   // Model outputs (workbook values at default weights)
   finalWeightedScore: number;
   percentSplit: number;
@@ -93,14 +93,14 @@ export const INDEX_DESCRIPTIONS: Record<string, string> = {
   flightSeats:
     'Average daily airline seating capacity into Egypt (Fri 3–Sat 4 Jul 2026 average).',
   marketTier:
-    'Strategic priority tier from the brief: 10 / 6 / 3 / 1.',
+    'Strategic priority tier from the brief (higher = higher priority).',
 };
 
-// Model weights from the Egypt workbook (row "Model Weight").
+// Model weights from the Egypt workbook (row "Model Weight", week-6 model).
 // YoY growth and flight seats are indexed but carry no weight by default —
 // they can be dialled up in the Model Weights panel.
 export const DEFAULT_MODEL_WEIGHTS: ModelWeights = {
-  audienceRatio: 10,
+  audienceRatio: 5,
   visitors2025: 10,
   yoyGrowth: 0,
   departuresToVisitors: 5,
@@ -108,5 +108,5 @@ export const DEFAULT_MODEL_WEIGHTS: ModelWeights = {
   mediaCost: 5,
   gdpPerCapita: 5,
   flightSeats: 0,
-  marketTier: 20,
+  marketTier: 50,
 };

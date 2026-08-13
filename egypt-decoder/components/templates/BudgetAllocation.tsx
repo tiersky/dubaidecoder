@@ -16,8 +16,20 @@ interface BudgetAllocationProps {
   allCountries: Country[];
 }
 
-// All 25 Egypt markets carry target-market metrics and are active by default.
-const DEFAULT_DISABLED = new Set<string>();
+// Week-6 model covers 15 active markets; the rest are switched off by default
+// (still toggleable in the budget table below).
+const DEFAULT_DISABLED = new Set<string>([
+  "nl", // Netherlands
+  "tr", // Turkey
+  "ro", // Romania
+  "at", // Austria
+  "be", // Belgium
+  "ch", // Switzerland
+  "sk", // Slovakia
+  "by", // Belarus
+  "ca", // Canada
+  "jp", // Japan
+]);
 
 export default function BudgetAllocation({
   allCountries,
@@ -25,7 +37,7 @@ export default function BudgetAllocation({
   const [xAxis, setXAxis] = useState("mediaCost");
   const [yAxis, setYAxis] = useState("finalWeightedScore");
   const [bubbleSize, setBubbleSize] = useState("budgetSplit");
-  const [totalBudget, setTotalBudget] = useState(10000000);
+  const [totalBudget, setTotalBudget] = useState(14000000);
   const [modelWeightsEnabled, setModelWeightsEnabled] = useState(false);
   const [modelWeights, setModelWeights] = useState<ModelWeights>({
     ...DEFAULT_MODEL_WEIGHTS,
