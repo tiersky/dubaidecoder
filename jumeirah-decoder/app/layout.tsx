@@ -9,7 +9,7 @@ const outfit = Outfit({
 });
 
 export const metadata: Metadata = {
-  title: "Country Decoder — Dubai Tourism Agency",
+  title: "Jumeirah Decoder — Market Intelligence",
   description: "Strategic Travel Intelligence Dashboard",
 };
 
