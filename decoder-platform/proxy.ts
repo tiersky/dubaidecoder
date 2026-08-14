@@ -37,7 +37,12 @@ export default async function proxy(request: NextRequest) {
     url.pathname = '/select'; // forbidden: send them to their own project list
     url.search = '';
   }
-  return NextResponse.redirect(url);
+  // Carry any refreshed session cookies (token rotation from setAll above)
+  // onto the redirect response — a fresh NextResponse.redirect() otherwise
+  // drops them, which can silently log the user out after rotation.
+  const redirectResponse = NextResponse.redirect(url);
+  response.cookies.getAll().forEach((cookie) => redirectResponse.cookies.set(cookie));
+  return redirectResponse;
 }
 
 export const config = {
