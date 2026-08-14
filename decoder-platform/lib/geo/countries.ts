@@ -72,7 +72,6 @@ export const aliases: Record<string, string> = {
   'khazakhstan': 'kz', // spelling used in the Egypt/AlUla workbooks
   'türkiye': 'tr', 'turkiye': 'tr', 'turkey': 'tr',
   'czechia': 'cz', 'czech republic': 'cz',
-  'south korea': 'kr', 'korea': 'kr', 'republic of korea': 'kr',
   'russia': 'ru', 'russian federation': 'ru',
   'ksa': 'sa', 'saudi': 'sa', 'saudi arabia': 'sa',
 };
