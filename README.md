@@ -9,11 +9,19 @@ not by branch**. Every push to `main` deploys each changed app to its own URL.
 
 | App | Client | Folder | Vercel project | URL | Markets |
 |---|---|---|---|---|---|
-| Country Decoder | Dubai Tourism Agency | `country-decoder/` | `country-decoder` | country-decoder.vercel.app | 14 |
-| Jumeirah Decoder | Jumeirah | `jumeirah-decoder/` | — (not deployed yet) | — | 23 |
+| Country Decoder | Dubai Tourism Agency | `country-decoder/` | — (see note) | — | 14 |
+| Jumeirah Decoder | Jumeirah | `jumeirah-decoder/` | `country-decoder` | country-decoder.vercel.app | 23 |
 | AlUla Decoder | AlUla | `alula-decoder/` | `alula-decoder` | alula-decoder.vercel.app | 15 |
 | Egypt Decoder | Egypt Tourism | `egypt-decoder/` | `egypt-decoder` | egypt-decoder.vercel.app | 25 (15 active) |
 | DHRE Prioritization | Dubai Holding Real Estate | `dhre-decoder/` | `dhre-decoder` | dhre-decoder.vercel.app | 28 |
+
+> **Note:** the Vercel project named `country-decoder` has its Root Directory
+> set to `jumeirah-decoder`, so country-decoder.vercel.app serves the Jumeirah
+> app. The original Dubai Tourism app is not deployed anywhere right now. To
+> untangle: rename that Vercel project to `jumeirah-decoder` (URL becomes
+> jumeirah-decoder.vercel.app — tell whoever uses the old link), then create a
+> fresh `country-decoder` project pointing at `country-decoder/` if the Dubai
+> app should be live again.
 
 Every app keeps the Excel/CSV workbook its numbers came from in its own
 `source/` folder — when the model changes, update the workbook there too.
