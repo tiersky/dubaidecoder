@@ -29,6 +29,19 @@ Every app keeps the Excel/CSV workbook its numbers came from in its own
 Also in the repo: `tools/` (chart scripts + outputs), `misc/` (orphan data and
 diagrams), `visual.py`.
 
+### Legacy decoders (separate repos, pre-monorepo)
+
+Two older decoders live outside this repo, from before the sibling-folder
+setup. They are not deployed from here:
+
+| App | Repo | Vercel project | Last deploy |
+|---|---|---|---|
+| KSA / HungerStation decoder | `tiersky/ksa-hungerstation-decoder` | `ksa-decoder` | Nov 2025 |
+| MENA decoder | `tiersky/mena-decoder` | `mena-decoder` | Dec 2025 |
+
+If either is still needed, fold it in as a sibling folder here and repoint its
+Vercel project (root directory = new folder); otherwise archive the project.
+
 ## Conventions
 
 - **One long-lived branch: `main`.** Feature branches are short-lived and merge
