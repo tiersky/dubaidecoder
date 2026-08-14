@@ -44,6 +44,10 @@ export function validateConfig(
   const keys = cfg.metrics.map((m) => m.key);
   if (new Set(keys).size !== keys.length) errors.push('metrics: duplicate metric keys');
 
+  const marketNames = cfg.markets.map((m) => m.name);
+  if (new Set(marketNames).size !== marketNames.length)
+    errors.push('markets: duplicate market names');
+
   if (cfg.markets.filter((m) => m.enabled).length < 2)
     errors.push('markets: at least 2 markets must be enabled');
 

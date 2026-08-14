@@ -37,6 +37,13 @@ describe('validateConfig', () => {
     if (!r.ok) expect(r.errors.join(' ')).toMatch(/missing value/i);
   });
 
+  it('rejects duplicate market names', () => {
+    const markets = good.markets.map((m, i) => (i === 0 ? { ...m, name: good.markets[1].name } : m));
+    const r = validateConfig({ ...good, markets });
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.errors.join(' ')).toMatch(/duplicate market names/i);
+  });
+
   it('rejects fewer than 2 enabled markets', () => {
     const markets = good.markets.map((m, i) => ({ ...m, enabled: i === 0 }));
     const r = validateConfig({ ...good, markets });

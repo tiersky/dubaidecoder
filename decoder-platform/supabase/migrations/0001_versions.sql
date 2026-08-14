@@ -27,6 +27,22 @@ create table public.version_revisions (
 create index version_revisions_version_id_idx
   on public.version_revisions (version_id);
 
+create or replace function public.set_updated_at()
+returns trigger
+language plpgsql
+set search_path = ''
+as $$
+begin
+  new.updated_at = now();
+  return new;
+end;
+$$;
+
+create trigger versions_set_updated_at
+  before update on public.versions
+  for each row
+  execute function public.set_updated_at();
+
 alter table public.versions enable row level security;
 alter table public.versions force row level security;
 alter table public.version_revisions enable row level security;

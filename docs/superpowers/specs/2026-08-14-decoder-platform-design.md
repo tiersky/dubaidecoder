@@ -67,6 +67,10 @@ version metadata (name, currency, default budget), the metric definitions
 (key, label, weight, data source, direction, tooltip), and per-market rows
 (name, ISO code, lat/lng, raw values, tier, enabled flag, computed indices).
 
+The `config` jsonb is the single source of truth; the scalar columns
+(slug, name, currency, default_budget) are derived from it and must be
+re-derived on every write by the service-role write path.
+
 ## Workbook pipeline: upload → detect → confirm → publish
 
 **Detect.** Server-side parse (SheetJS in a route handler / server action).
