@@ -4,16 +4,22 @@ export type Cell = string | number | null;
 
 export interface SheetGrid {
   name: string;
+  hidden: boolean;
   cells: Cell[][];
   formatted: (string | null)[][];
 }
 
 export function loadWorkbookGrids(data: Buffer | Uint8Array): SheetGrid[] {
   const wb = XLSX.read(data, { type: 'buffer', cellText: true });
+  const hiddenByName = new Map<string, boolean>();
+  for (const s of wb.Workbook?.Sheets ?? []) {
+    if (s?.name) hiddenByName.set(s.name, !!s.Hidden);
+  }
   return wb.SheetNames.map((name) => {
+    const hidden = hiddenByName.get(name) ?? false;
     const sheet = wb.Sheets[name];
     const ref = sheet['!ref'];
-    if (!ref) return { name, cells: [], formatted: [] };
+    if (!ref) return { name, hidden, cells: [], formatted: [] };
     const range = XLSX.utils.decode_range(ref);
     const cells: Cell[][] = [];
     const formatted: (string | null)[][] = [];
@@ -33,7 +39,7 @@ export function loadWorkbookGrids(data: Buffer | Uint8Array): SheetGrid[] {
       cells.push(row);
       formatted.push(frow);
     }
-    return { name, cells, formatted };
+    return { name, hidden, cells, formatted };
   });
 }
 
