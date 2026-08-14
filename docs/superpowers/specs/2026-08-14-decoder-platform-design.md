@@ -155,6 +155,19 @@ Real workbooks are the oracles:
 - Auth tests: viewer cannot read another slug's config (RLS-level and
   route-level).
 
+## Operations
+
+- **Supabase keepalive:** the free tier pauses projects after ~1 week of
+  inactivity. A Vercel Cron (`vercel.json` crons, daily) calls
+  `/api/keepalive`, which performs a trivial authenticated query (e.g.
+  `select count(*) from versions`) so the project never idles. The route
+  requires a `CRON_SECRET` header so it can't be abused publicly. Same
+  pattern as the existing alshaya-competitivepulse keepalive.
+- **Secrets:** Supabase URL + anon key + service-role key live in
+  `decoder-platform/.env.local` (gitignored) and as Vercel project env vars.
+  The service-role key is server-only (user creation, RLS bypass in admin
+  routes) and must never reach the client bundle.
+
 ## Out of scope (v1)
 
 - Migrating the five existing decoders (they keep their vercel.app URLs).
