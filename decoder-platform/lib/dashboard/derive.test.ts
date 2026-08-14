@@ -46,7 +46,8 @@ describe('computeAllocations', () => {
     const total = rows.reduce((a, r) => a + r.budget, 0);
     expect(total).toBeCloseTo(14000000, 4);
     const germany = rows.find((r) => r.name === 'Germany')!;
-    expect(germany.budget).toBeCloseTo(egyptExpected.Germany.split * 14000000, 2);
+    expect(germany.split).toBeCloseTo(egyptExpected.Germany.split, 5);
+    expect(germany.budget).toBeCloseTo(germany.split * 14000000, 6);
   });
 
   it('renormalizes when a market is excluded', () => {
