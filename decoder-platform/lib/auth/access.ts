@@ -20,8 +20,8 @@ export function parseAccess(claims: unknown): Access {
   return role === null ? { role: null, slugs: [] } : { role, slugs };
 }
 
-const PUBLIC_EXACT = new Set(['/']);
-const PUBLIC_PREFIXES = ['/login', '/select', '/auth', '/api/keepalive'];
+const PUBLIC_EXACT = new Set(['/', '/auth/signout']);
+const PUBLIC_PREFIXES = ['/login', '/select', '/api/keepalive'];
 
 export type Decision = 'allow' | 'login' | 'forbidden';
 

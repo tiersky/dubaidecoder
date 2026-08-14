@@ -27,13 +27,17 @@ describe('authorize', () => {
     expect(authorize('/api/keepalive', null)).toBe('allow');
     expect(authorize('/select', viewer)).toBe('allow');
   });
-  it('auth routes (e.g. sign-out) are always reachable', () => {
+  it('the sign-out route is always reachable', () => {
     // Must stay public: sign-out is a POST from an authenticated viewer whose
     // allowed_slugs never include "auth", so slug-matching would otherwise
-    // forbid it and the user could never sign out.
+    // forbid it and the user could never sign out. Exact match only — other
+    // /auth/* routes are not exempted just because they share the prefix.
     expect(authorize('/auth/signout', null)).toBe('allow');
     expect(authorize('/auth/signout', viewer)).toBe('allow');
     expect(authorize('/auth/signout', admin)).toBe('allow');
+  });
+  it('other auth routes stay gated (no /auth/* blanket exemption)', () => {
+    expect(authorize('/auth/reset', null)).toBe('login');
   });
   it('signed-out users are sent to login', () => {
     expect(authorize('/egypt', null)).toBe('login');
