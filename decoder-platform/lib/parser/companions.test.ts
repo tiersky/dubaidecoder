@@ -42,6 +42,7 @@ describe('companions — AlUla', () => {
 
   it('extracts the index table', () => {
     expect(c.indexTable).not.toBeNull();
+    expect(c.indexTable).toHaveLength(15);
     const saudi = c.indexTable!.find((r) => r.name === 'Saudi Arabia')!;
     expect(saudi.values[0]).toBeCloseTo(0.722990074066, 6);
   });

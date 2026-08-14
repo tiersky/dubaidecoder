@@ -170,7 +170,9 @@ function buildCandidate(
         for (let r = tableHeaderRow + 1; r < cells.length; r++) {
           const name = text(cells[r]?.[labelCol]);
           if (name === null) break;
-          indexTable.push({ name, values: metricCols.map((c) => num(cells[r]?.[c])) });
+          const values = metricCols.map((c) => num(cells[r]?.[c]));
+          if (!values.some((v) => v !== null)) continue;
+          indexTable.push({ name, values });
         }
         if (indexTable.length === 0) indexTable = null;
       }

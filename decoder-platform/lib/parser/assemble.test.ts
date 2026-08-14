@@ -4,6 +4,7 @@ import path from 'node:path';
 import { loadWorkbookGrids } from './grid';
 import { findModelBlocks } from './detect';
 import { metricKey, inferDirections, assembleConfig } from './assemble';
+import { ModelBlockCandidate } from './detect';
 
 const EGYPT = path.resolve(process.cwd(), '../egypt-decoder/source/Egypt_decoder.xlsx');
 const egyptCandidate = findModelBlocks(loadWorkbookGrids(readFileSync(EGYPT)))[0];
@@ -23,6 +24,40 @@ describe('inferDirections — Egypt', () => {
     expect(directions[5]).toBe('lower');   // Media Cost Benchmark CPM
     expect(directions[0]).toBe('higher');  // Audience ratio/pop
     expect(directions[8]).toBe('higher');  // Market Tier
+  });
+});
+
+describe('inferDirections — tie-break', () => {
+  it('falls back to the name heuristic when higherErr equals lowerErr', () => {
+    // avg == market value => phi == 0.5 for both markets; index table values are
+    // exactly 0.5 too, so higherErr == lowerErr == 0 and the loop cannot decide.
+    const candidate: ModelBlockCandidate = {
+      sheetName: 'Synthetic',
+      labelCol: 0,
+      headerRow: 0,
+      avgRow: 3,
+      stdevRow: 4,
+      weightRow: 5,
+      dataSourceRow: null,
+      metricCols: [1],
+      headers: ['Media Cost'],
+      markets: [
+        { row: 1, name: 'Alpha', values: [10] },
+        { row: 2, name: 'Beta', values: [10] },
+      ],
+      weights: [1],
+      sources: [null],
+      avg: [10],
+      stdev: [2],
+      outputs: null,
+      indexTable: [
+        { name: 'Alpha', values: [0.5] },
+        { name: 'Beta', values: [0.5] },
+      ],
+      budget: null,
+    };
+    const directions = inferDirections(candidate);
+    expect(directions[0]).toBe('lower'); // byName: /cost/i matches "Media Cost"
   });
 });
 

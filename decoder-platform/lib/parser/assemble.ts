@@ -39,7 +39,8 @@ export function inferDirections(candidate: ModelBlockCandidate): Direction[] {
       if (++n >= 5) break;
     }
     if (n === 0) return byName;
-    return higherErr <= lowerErr ? 'higher' : 'lower';
+    if (higherErr === lowerErr) return byName;
+    return higherErr < lowerErr ? 'higher' : 'lower';
   });
 }
 

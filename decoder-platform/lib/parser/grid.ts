@@ -28,7 +28,7 @@ export function loadWorkbookGrids(data: Buffer | Uint8Array): SheetGrid[] {
       const frow: (string | null)[] = [];
       for (let c = 0; c <= range.e.c; c++) {
         const cell = sheet[XLSX.utils.encode_cell({ r, c })] as XLSX.CellObject | undefined;
-        if (!cell || cell.v === undefined || cell.v === null) {
+        if (!cell || cell.v === undefined || cell.v === null || cell.t === 'e') {
           row.push(null);
           frow.push(null);
           continue;

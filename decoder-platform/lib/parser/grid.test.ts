@@ -28,6 +28,13 @@ describe('loadWorkbookGrids', () => {
     expect(model.formatted[0][23]).toMatch(/AED/);
   });
 
+  it('exposes hidden flags from the workbook sheet metadata', () => {
+    const model = grids.find((g) => g.name === 'Model')!;
+    expect(model.hidden).toBe(false);
+    const noMediaCost = grids.find((g) => g.name === 'Country Decoder - no media cost')!;
+    expect(noMediaCost.hidden).toBe(true);
+  });
+
   it('normalizes labels', () => {
     expect(norm(' Model Weight ')).toBe('model weight');
     expect(norm('St  Dv')).toBe('st dv');
