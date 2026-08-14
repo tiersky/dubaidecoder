@@ -44,6 +44,12 @@ export function validateConfig(
   const keys = cfg.metrics.map((m) => m.key);
   if (new Set(keys).size !== keys.length) errors.push('metrics: duplicate metric keys');
 
+  const reservedKeys = new Set(['score', 'split', 'budget']);
+  for (const key of keys) {
+    if (reservedKeys.has(key))
+      errors.push(`metrics: reserved metric key "${key}" (rename the workbook column)`);
+  }
+
   const marketNames = cfg.markets.map((m) => m.name);
   if (new Set(marketNames).size !== marketNames.length)
     errors.push('markets: duplicate market names');

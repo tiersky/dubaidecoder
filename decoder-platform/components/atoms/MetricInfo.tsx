@@ -6,14 +6,29 @@ interface MetricInfoProps {
 }
 
 /**
+ * Escapes the characters that matter for HTML text/attribute injection.
+ * Used because react-tooltip renders `data-tooltip-html` as raw HTML, and
+ * the metric fields interpolated below can originate from uploaded
+ * workbook cells (i.e. untrusted input).
+ */
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+/**
  * Small ⓘ icon that shows the metric's definition and data source in a
  * tooltip. The shared <Tooltip id="metric-tooltip" /> instance is mounted
  * once in DashboardLayout.
  */
 export default function MetricInfo({ metric, label }: MetricInfoProps) {
-  const title = label ?? metric.label;
-  const description = metric.description;
-  const source = metric.source;
+  const title = escapeHtml(label ?? metric.label);
+  const description = metric.description ? escapeHtml(metric.description) : metric.description;
+  const source = metric.source ? escapeHtml(metric.source) : metric.source;
   if (!description && !source) return null;
 
   const html = `<div style="max-width:260px;text-align:left"><strong>${title}</strong>${

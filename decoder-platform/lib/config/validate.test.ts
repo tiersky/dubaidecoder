@@ -49,4 +49,15 @@ describe('validateConfig', () => {
     const r = validateConfig({ ...good, markets });
     expect(r.ok).toBe(false);
   });
+
+  it('rejects a metric keyed with a reserved axis key', () => {
+    const metrics = good.metrics.map((m, i) => (i === 0 ? { ...m, key: 'score' } : m));
+    const markets = good.markets.map((m) => ({
+      ...m,
+      values: { ...m.values, score: m.values.audienceRatio },
+    }));
+    const r = validateConfig({ ...good, metrics, markets });
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.errors.join(' ')).toMatch(/reserved/i);
+  });
 });
