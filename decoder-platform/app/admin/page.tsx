@@ -46,12 +46,15 @@ export default async function AdminPage() {
                 href={`/${v.slug}`}
                 className="glass-input glass-card-hover flex items-center justify-between gap-4 rounded-lg px-4 py-3 text-sm text-slate-800"
               >
-                <span className="font-medium">{v.name}</span>
+                <span className="font-medium underline decoration-slate-300 underline-offset-4">
+                  {v.name}
+                </span>
                 <span className="flex items-center gap-3 text-xs text-slate-500">
                   <span>{v.slug}</span>
                   <span>{v.currency}</span>
                   <span className="capitalize">{v.status}</span>
                   <span>{new Date(v.updated_at).toLocaleDateString()}</span>
+                  <span className="font-semibold text-slate-700">Open dashboard →</span>
                 </span>
               </Link>
             </li>
