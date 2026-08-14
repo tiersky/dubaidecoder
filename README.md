@@ -14,6 +14,7 @@ not by branch**. Every push to `main` deploys each changed app to its own URL.
 | AlUla Decoder | AlUla | `alula-decoder/` | `alula-decoder` | alula-decoder.vercel.app | 15 |
 | Egypt Decoder | Egypt Tourism | `egypt-decoder/` | `egypt-decoder` | egypt-decoder.vercel.app | 25 (15 active) |
 | DHRE Prioritization | Dubai Holding Real Estate | `dhre-decoder/` | `dhre-decoder` | dhre-decoder.vercel.app | 28 |
+| Decoder Platform (all new versions) | multi-client | decoder-platform/ | country-decoders | country-decoders.vercel.app | dynamic |
 
 > **Note:** the Vercel project named `country-decoder` has its Root Directory
 > set to `jumeirah-decoder`, so country-decoder.vercel.app serves the Jumeirah
