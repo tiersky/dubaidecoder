@@ -2,6 +2,7 @@
 
 import { MarketVm, AllocationRow } from '@/lib/dashboard/derive';
 import { MetricDef } from '@/lib/model/score';
+import { fmt } from '@/lib/dashboard/format';
 import MetricInfo from '@/components/atoms/MetricInfo';
 
 interface BudgetTableProps {
@@ -12,12 +13,6 @@ interface BudgetTableProps {
   currency: string;
   enabledNames: Set<string>;
   onToggleMarket: (name: string) => void;
-}
-
-function fmt(v: number | null): string {
-  if (v === null) return '—';
-  if (Math.abs(v) < 1) return v.toFixed(2);
-  return Math.round(v).toLocaleString();
 }
 
 export default function BudgetTable({
