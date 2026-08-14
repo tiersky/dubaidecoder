@@ -21,7 +21,7 @@ export function parseAccess(claims: unknown): Access {
 }
 
 const PUBLIC_EXACT = new Set(['/']);
-const PUBLIC_PREFIXES = ['/login', '/select', '/api/keepalive'];
+const PUBLIC_PREFIXES = ['/login', '/select', '/auth', '/api/keepalive'];
 
 export type Decision = 'allow' | 'login' | 'forbidden';
 

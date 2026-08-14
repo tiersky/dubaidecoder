@@ -27,6 +27,14 @@ describe('authorize', () => {
     expect(authorize('/api/keepalive', null)).toBe('allow');
     expect(authorize('/select', viewer)).toBe('allow');
   });
+  it('auth routes (e.g. sign-out) are always reachable', () => {
+    // Must stay public: sign-out is a POST from an authenticated viewer whose
+    // allowed_slugs never include "auth", so slug-matching would otherwise
+    // forbid it and the user could never sign out.
+    expect(authorize('/auth/signout', null)).toBe('allow');
+    expect(authorize('/auth/signout', viewer)).toBe('allow');
+    expect(authorize('/auth/signout', admin)).toBe('allow');
+  });
   it('signed-out users are sent to login', () => {
     expect(authorize('/egypt', null)).toBe('login');
     expect(authorize('/admin', null)).toBe('login');
