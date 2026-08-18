@@ -18,10 +18,24 @@ import {
 } from '@/lib/versions/store';
 import { verifyAgainstWorkbook } from '@/lib/parser/verify';
 import { VersionConfig } from '@/lib/config/types';
+import {
+  listUsers,
+  createViewer,
+  resetPassword as resetUserPassword,
+  setSlugs as setUserSlugs,
+  setActive as setUserActive,
+  generatePassword,
+} from '@/lib/users/admin';
 
 export interface AdminActionState {
   error?: string;
   nearMisses?: { sheetName: string; row: number; reason: string }[];
+}
+
+export interface UserActionState {
+  error?: string;
+  createdPassword?: string;
+  forEmail?: string;
 }
 
 const SLUG_RE = /^[a-z0-9-]+$/;
@@ -299,4 +313,119 @@ export async function applyTweaksAction(
 
   revalidatePath('/' + slug);
   redirect('/' + slug);
+}
+
+export async function createViewerAction(
+  _prev: UserActionState,
+  formData: FormData
+): Promise<UserActionState> {
+  await requireAdmin();
+
+  const email = String(formData.get('email') ?? '').trim();
+  if (!email) return { error: 'Email is required.' };
+
+  const slugs = formData.getAll('slugs').map(String);
+  if (slugs.length === 0 && formData.get('confirmNoSlugs') !== 'on') {
+    return {
+      error:
+        'No projects selected — the viewer could sign in but see nothing. Tick the confirmation to create anyway.',
+    };
+  }
+
+  const submittedPassword = String(formData.get('password') ?? '');
+  const password = submittedPassword !== '' ? submittedPassword : generatePassword();
+
+  try {
+    await createViewer({ email, password, slugs });
+  } catch (e) {
+    // createViewer's own "invalid slug" message is safe to surface verbatim;
+    // anything else (raw Supabase error text, e.g. duplicate email) collapses
+    // to a generic message, matching the convention used elsewhere here.
+    const message = e instanceof Error ? e.message : '';
+    const safe = message.startsWith('invalid slug');
+    return { error: safe ? message : 'Create failed — try again.' };
+  }
+
+  revalidatePath('/admin/users');
+  // Shown once on this response only — never persisted or queryable again.
+  return { createdPassword: password, forEmail: email };
+}
+
+export async function resetPasswordAction(
+  _prev: UserActionState,
+  formData: FormData
+): Promise<UserActionState> {
+  await requireAdmin();
+
+  const userId = String(formData.get('userId') ?? '');
+  const email = String(formData.get('email') ?? '');
+  if (!userId) return { error: 'Missing user.' };
+
+  // Always generated — no manual entry, which keeps weak/reused passwords
+  // out of the loop.
+  const password = generatePassword();
+
+  try {
+    await resetUserPassword(userId, password);
+  } catch {
+    return { error: 'Password reset failed — try again.' };
+  }
+
+  revalidatePath('/admin/users');
+  return { createdPassword: password, forEmail: email };
+}
+
+export async function setUserSlugsAction(
+  _prev: UserActionState,
+  formData: FormData
+): Promise<UserActionState> {
+  await requireAdmin();
+
+  const userId = String(formData.get('userId') ?? '');
+  if (!userId) return { error: 'Missing user.' };
+  const slugs = formData.getAll('slugs').map(String);
+
+  try {
+    await setUserSlugs(userId, slugs);
+  } catch (e) {
+    const message = e instanceof Error ? e.message : '';
+    const safe = message.startsWith('invalid slug');
+    return { error: safe ? message : 'Updating projects failed — try again.' };
+  }
+
+  revalidatePath('/admin/users');
+  return {};
+}
+
+export async function setUserActiveAction(
+  _prev: UserActionState,
+  formData: FormData
+): Promise<UserActionState> {
+  await requireAdmin();
+
+  const userId = String(formData.get('userId') ?? '');
+  if (!userId) return { error: 'Missing user.' };
+  const active = formData.get('active') === 'true';
+
+  if (!active && formData.get('confirm') !== 'on') {
+    return { error: 'Tick the confirmation to deactivate this user.' };
+  }
+
+  // Looked up server-side rather than trusted from a hidden field — a
+  // client-rendered role badge could be stale, and admins are managed via
+  // script only, so this must hold even if the UI never offers the action.
+  const users = await listUsers();
+  const target = users.find((u) => u.id === userId);
+  if (target?.role === 'admin') {
+    return { error: 'Admins are managed via script only.' };
+  }
+
+  try {
+    await setUserActive(userId, active);
+  } catch {
+    return { error: `${active ? 'Reactivation' : 'Deactivation'} failed — try again.` };
+  }
+
+  revalidatePath('/admin/users');
+  return {};
 }
