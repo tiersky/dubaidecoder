@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { getAccess } from '@/lib/auth/require';
 import { listVersions, listDrafts } from '@/lib/versions/store';
+import { deleteDraftAction } from './actions';
 
 export const dynamic = 'force-dynamic';
 
@@ -92,6 +93,15 @@ export default async function AdminPage() {
                     >
                       Preview
                     </Link>
+                    <form action={deleteDraftAction}>
+                      <input type="hidden" name="slug" value={d.slug} />
+                      <button
+                        type="submit"
+                        className="font-semibold text-red-600 underline decoration-red-300 underline-offset-4"
+                      >
+                        Delete
+                      </button>
+                    </form>
                   </span>
                 </li>
               ))}
