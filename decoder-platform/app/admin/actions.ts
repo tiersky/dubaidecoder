@@ -4,7 +4,7 @@ import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import { getAccess } from '@/lib/auth/require';
 import { serverClient } from '@/lib/supabase/server';
-import { putDraftWorkbook, downloadDraftWorkbook } from '@/lib/storage/workbooks';
+import { putDraftWorkbook, downloadDraftWorkbook, validateWorkbookFile } from '@/lib/storage/workbooks';
 import { detectCandidates, buildDraft } from '@/lib/admin/upload-core';
 import { saveDraft, deleteDraft, getPublishedConfig } from '@/lib/versions/store';
 
@@ -51,15 +51,30 @@ export async function uploadWorkbookAction(
       return { error: `"${slug}" is already published — use "Update existing".` };
   }
 
-  let bytes: Uint8Array;
+  const bytes = new Uint8Array(await file.arrayBuffer());
+
+  // Our own validation message is safe to surface verbatim; anything the
+  // storage layer throws (raw Supabase error text) is not, so it collapses
+  // to a fixed generic message below.
+  const invalid = validateWorkbookFile(bytes);
+  if (invalid) return { error: invalid };
+
   try {
-    bytes = new Uint8Array(await file.arrayBuffer());
     await putDraftWorkbook(slug, bytes);
-  } catch (e) {
-    return { error: e instanceof Error ? e.message : 'Upload failed.' };
+  } catch {
+    return { error: 'Upload failed — try again.' };
   }
 
-  const { candidates, nearMisses } = detectCandidates(bytes);
+  let candidates: ReturnType<typeof detectCandidates>['candidates'];
+  let nearMisses: ReturnType<typeof detectCandidates>['nearMisses'];
+  try {
+    ({ candidates, nearMisses } = detectCandidates(bytes));
+  } catch {
+    // The zip signature checked out but the workbook is corrupt/unreadable.
+    // The draft bytes are already written; leave the row/redirect alone and
+    // just report a generic parse failure — no library internals leaked.
+    return { error: 'Could not parse this file as an Excel workbook.' };
+  }
   if (candidates.length === 0)
     return { error: 'No model block found in this workbook.', nearMisses };
   if (candidates.length > 1)
@@ -86,7 +101,12 @@ export async function pickCandidateAction(formData: FormData): Promise<void> {
   const name = String(formData.get('name') ?? '');
   const index = Number(formData.get('index') ?? 0);
   const bytes = await downloadDraftWorkbook(slug);
-  const { candidates } = detectCandidates(bytes);
+  let candidates: ReturnType<typeof detectCandidates>['candidates'];
+  try {
+    ({ candidates } = detectCandidates(bytes));
+  } catch {
+    throw new Error('Could not parse this file as an Excel workbook.');
+  }
   const published = await getPublishedConfig(slug).catch(() => null);
   const built = buildDraft(candidates, index, {
     slug,
