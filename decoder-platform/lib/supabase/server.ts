@@ -22,6 +22,7 @@ export async function serverClient() {
           }
         },
       },
+      cookieOptions: { secure: process.env.NODE_ENV === 'production' },
     }
   );
 }

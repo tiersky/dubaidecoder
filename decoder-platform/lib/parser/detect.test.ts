@@ -1,11 +1,20 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
-import { loadWorkbookGrids } from './grid';
-import { findModelBlocks } from './detect';
+import { SheetGrid, Cell, loadWorkbookGrids } from './grid';
+import { findModelBlocks, findModelBlocksDetailed } from './detect';
 
 const EGYPT = path.resolve(process.cwd(), '../egypt-decoder/source/Egypt_decoder.xlsx');
 const ALULA = path.resolve(process.cwd(), '../alula-decoder/source/Al Ula - Country Decoder.xlsx');
+
+function gridFromRows(name: string, rows: Cell[][]): SheetGrid {
+  return {
+    name,
+    hidden: false,
+    cells: rows,
+    formatted: rows.map((row) => row.map((v) => (v === null ? null : String(v)))),
+  };
+}
 
 describe('findModelBlocks — Egypt workbook', () => {
   const candidates = findModelBlocks(loadWorkbookGrids(readFileSync(EGYPT)));
@@ -76,5 +85,42 @@ describe('findModelBlocks — AlUla workbook', () => {
 
   it('never proposes the dataviz summary sheet', () => {
     expect(candidates.every((x) => x.sheetName !== 'dataviz')).toBe(true);
+  });
+});
+
+describe('findModelBlocksDetailed — near misses', () => {
+  it('reports a near-miss when Avg has no St.Dev beneath it', () => {
+    const grid = gridFromRows('Sheet1', [
+      ['Country', 'Metric A', 'Metric B'],
+      ['Germany', 1, 2],
+      ['France', 3, 4],
+      ['Avg.', 2, 3],
+      ['Something else', 0, 0],
+    ]);
+    const { candidates, nearMisses } = findModelBlocksDetailed([grid]);
+    expect(candidates).toHaveLength(0);
+    expect(nearMisses).toHaveLength(1);
+    expect(nearMisses[0].reason).toMatch(/St\.?Dev/i);
+  });
+
+  it('reports a near-miss when the weight row is missing', () => {
+    const grid = gridFromRows('Sheet1', [
+      ['Country', 'Metric A', 'Metric B'],
+      ['Germany', 1, 2],
+      ['France', 3, 4],
+      ['Avg.', 2, 3],
+      ['St.Dev', 1, 1],
+    ]);
+    const { candidates, nearMisses } = findModelBlocksDetailed([grid]);
+    expect(candidates).toHaveLength(0);
+    expect(nearMisses[0].reason).toMatch(/model weight/i);
+  });
+
+  it('oracle workbooks produce no near-miss noise alongside their candidates', () => {
+    const egyptGrids = loadWorkbookGrids(readFileSync(EGYPT));
+    const { candidates, nearMisses } = findModelBlocksDetailed(egyptGrids);
+    expect(candidates.length).toBeGreaterThan(0);
+    // near-misses may exist on scratch sheets; every reason must be non-empty text
+    for (const m of nearMisses) expect(m.reason.length).toBeGreaterThan(5);
   });
 });

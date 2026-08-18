@@ -17,6 +17,7 @@ export interface VerificationReport {
   maxScoreDelta: number;
   maxSplitDelta: number;
   ok: boolean;
+  reasons: string[];
 }
 
 export const TOLERANCES = { index: 0.002, score: 0.02, split: 0.001 };
@@ -80,15 +81,34 @@ export function verifyAgainstWorkbook(
   const maxIndexDelta = maxOf('index');
   const maxScoreDelta = maxOf('score');
   const maxSplitDelta = maxOf('split');
+
+  const reasons: string[] = [];
+  if (checks.length === 0) {
+    reasons.push('nothing to compare: workbook has no readable outputs or index table');
+  }
+  const worst = (kind: VerificationCheck['kind']) =>
+    checks.filter((c) => c.kind === kind).sort((a, b) => b.delta - a.delta)[0];
+  for (const [kind, tol, max] of [
+    ['index', TOLERANCES.index, maxIndexDelta],
+    ['score', TOLERANCES.score, maxScoreDelta],
+    ['split', TOLERANCES.split, maxSplitDelta],
+  ] as const) {
+    if (max > tol) {
+      const w = worst(kind)!;
+      reasons.push(
+        `${kind}: max delta ${max.toFixed(4)} exceeds tolerance ${tol}` +
+          ` (${w.market}${w.metricKey ? ' · ' + w.metricKey : ''}:` +
+          ` computed ${w.computed.toFixed(4)} vs workbook ${w.workbook.toFixed(4)})`
+      );
+    }
+  }
+
   return {
     checks,
     maxIndexDelta,
     maxScoreDelta,
     maxSplitDelta,
-    ok:
-      checks.length > 0 &&
-      maxIndexDelta <= TOLERANCES.index &&
-      maxScoreDelta <= TOLERANCES.score &&
-      maxSplitDelta <= TOLERANCES.split,
+    ok: reasons.length === 0,
+    reasons,
   };
 }

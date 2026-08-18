@@ -20,6 +20,7 @@ export default async function proxy(request: NextRequest) {
           );
         },
       },
+      cookieOptions: { secure: process.env.NODE_ENV === 'production' },
     }
   );
 
@@ -33,6 +34,9 @@ export default async function proxy(request: NextRequest) {
   if (decision === 'login') {
     url.pathname = '/login';
     url.search = '';
+    if (request.method === 'GET' && !request.nextUrl.pathname.startsWith('/api/')) {
+      url.searchParams.set('next', request.nextUrl.pathname);
+    }
   } else {
     url.pathname = '/select'; // forbidden: send them to their own project list
     url.search = '';

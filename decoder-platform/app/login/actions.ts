@@ -3,6 +3,7 @@
 import { redirect } from 'next/navigation';
 import { serverClient } from '@/lib/supabase/server';
 import { parseAccess } from '@/lib/auth/access';
+import { postLoginPath } from '@/lib/auth/post-login';
 
 export interface LoginState {
   error?: string;
@@ -26,11 +27,8 @@ export async function signIn(_prevState: LoginState, formData: FormData): Promis
   const { data } = await supabase.auth.getClaims();
   const access = parseAccess(data?.claims);
 
-  if (access.role === 'admin') {
-    redirect('/admin');
-  }
-  if (access.role === 'viewer' && access.slugs.length === 1) {
-    redirect('/' + access.slugs[0]);
-  }
-  redirect('/select');
+  if (access.role === null) redirect('/select');
+
+  const next = String(formData.get('next') ?? '') || null;
+  redirect(postLoginPath(access, next));
 }

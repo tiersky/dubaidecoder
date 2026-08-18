@@ -51,8 +51,17 @@ function text(v: Cell | undefined): string | null {
   return typeof v === 'string' && v.trim() !== '' ? v.trim() : null;
 }
 
-export function findModelBlocks(grids: SheetGrid[]): ModelBlockCandidate[] {
-  const out: ModelBlockCandidate[] = [];
+export interface NearMiss {
+  sheetName: string;
+  row: number;
+  reason: string;
+}
+
+export function findModelBlocksDetailed(
+  grids: SheetGrid[]
+): { candidates: ModelBlockCandidate[]; nearMisses: NearMiss[] } {
+  const candidates: ModelBlockCandidate[] = [];
+  const nearMisses: NearMiss[] = [];
   for (const grid of grids) {
     if (grid.hidden) continue; // hidden sheets hold deprecated/alternate model copies, not the live one
     const { cells } = grid;
@@ -60,7 +69,11 @@ export function findModelBlocks(grids: SheetGrid[]): ModelBlockCandidate[] {
       const row = cells[r] ?? [];
       for (let c = 0; c < row.length; c++) {
         if (!AVG_RE.test(norm(row[c]))) continue;
-        if (!STDEV_RE.test(norm(cells[r + 1]?.[c] ?? null))) continue;
+        const miss = (reason: string) => nearMisses.push({ sheetName: grid.name, row: r, reason });
+        if (!STDEV_RE.test(norm(cells[r + 1]?.[c] ?? null))) {
+          miss(`found "Avg." but no "St.Dev" on the next row`);
+          continue;
+        }
         let weightRow = -1;
         for (let w = r + 2; w <= r + 6 && w < cells.length; w++) {
           if (WEIGHT_RE.test(norm(cells[w]?.[c] ?? null))) {
@@ -68,13 +81,24 @@ export function findModelBlocks(grids: SheetGrid[]): ModelBlockCandidate[] {
             break;
           }
         }
-        if (weightRow === -1) continue;
-        const candidate = buildCandidate(grid, r, c, weightRow);
-        if (candidate) out.push(candidate);
+        if (weightRow === -1) {
+          miss(`found Avg/St.Dev but no "Model weight" row within 4 rows below`);
+          continue;
+        }
+        const built = buildCandidate(grid, r, c, weightRow);
+        if (typeof built === 'string') {
+          miss(built);
+          continue;
+        }
+        candidates.push(built);
       }
     }
   }
-  return out.sort((a, b) => b.markets.length - a.markets.length);
+  return { candidates: candidates.sort((a, b) => b.markets.length - a.markets.length), nearMisses };
+}
+
+export function findModelBlocks(grids: SheetGrid[]): ModelBlockCandidate[] {
+  return findModelBlocksDetailed(grids).candidates;
 }
 
 function buildCandidate(
@@ -82,7 +106,7 @@ function buildCandidate(
   avgRow: number,
   labelCol: number,
   weightRow: number
-): ModelBlockCandidate | null {
+): ModelBlockCandidate | string {
   const { cells } = grid;
 
   // Walk up from Avg through the contiguous run of text label cells;
@@ -90,7 +114,9 @@ function buildCandidate(
   let top = avgRow;
   while (top - 1 >= 0 && text(cells[top - 1]?.[labelCol]) !== null) top--;
   const headerRow = top;
-  if (headerRow >= avgRow - 1) return null; // need header + at least 2 market rows
+  if (headerRow >= avgRow - 1) {
+    return `block header not found: need a header row plus at least 2 market rows above "Avg."`;
+  }
 
   // Metric columns: contiguous non-empty headers right of the label column.
   const metricCols: number[] = [];
@@ -101,7 +127,9 @@ function buildCandidate(
     metricCols.push(c);
     headers.push(h);
   }
-  if (metricCols.length < 2) return null;
+  if (metricCols.length < 2) {
+    return `only ${metricCols.length} metric column(s) right of the label column; need at least 2`;
+  }
 
   const markets: MarketLine[] = [];
   for (let r = headerRow + 1; r < avgRow; r++) {
@@ -111,7 +139,9 @@ function buildCandidate(
     if (!values.some((v) => v !== null)) continue;
     markets.push({ row: r, name, values });
   }
-  if (markets.length < 2) return null;
+  if (markets.length < 2) {
+    return `only ${markets.length} market row(s) with numeric data between header and "Avg."; need at least 2`;
+  }
 
   const stdevRow = avgRow + 1;
   let dataSourceRow: number | null = null;
