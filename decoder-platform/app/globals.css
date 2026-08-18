@@ -10,6 +10,13 @@ body {
   font-family: var(--font-sans), system-ui, sans-serif;
   min-height: 100vh;
   color: var(--color-foreground);
+  /* Tinted backdrop the glass surfaces need to read as cards — on plain
+     white, the translucent white cards/inputs were nearly invisible. */
+  background:
+    radial-gradient(1200px 800px at 85% -10%, rgba(99, 102, 241, 0.14), transparent 60%),
+    radial-gradient(1000px 700px at -10% 30%, rgba(56, 189, 248, 0.12), transparent 55%),
+    linear-gradient(160deg, #eef2f7 0%, #e6ebf4 100%);
+  background-attachment: fixed;
 }
 
 /* ── Glassmorphism Surfaces ────────────────────────────── */
@@ -18,7 +25,7 @@ body {
   background: rgba(255, 255, 255, 0.6);
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
-  border: 1px solid rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(15, 23, 42, 0.08);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.06);
 }
 
@@ -26,7 +33,7 @@ body {
   background: rgba(255, 255, 255, 0.52);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.65);
+  border: 1px solid rgba(15, 23, 42, 0.08);
   box-shadow:
     0 8px 32px rgba(0, 0, 0, 0.04),
     inset 0 1px 0 rgba(255, 255, 255, 0.6);
@@ -60,10 +67,10 @@ body {
 }
 
 .glass-input {
-  background: rgba(255, 255, 255, 0.5);
+  background: rgba(255, 255, 255, 0.75);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.6);
+  border: 1px solid rgba(15, 23, 42, 0.15);
   transition: all 0.2s ease;
 }
 .glass-input:focus {
