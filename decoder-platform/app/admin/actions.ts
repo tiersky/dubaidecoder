@@ -315,6 +315,22 @@ export async function applyTweaksAction(
   redirect('/' + slug);
 }
 
+/**
+ * Server-side guard shared by every action that targets an existing user by
+ * id: confirms the user exists and is not role 'admin'. Admins are managed
+ * by script only — the UI never renders these forms for admin rows, but a
+ * hand-crafted POST could otherwise still reset an admin's password or
+ * rewrite their slugs, so this must be enforced here regardless of what the
+ * client sends.
+ */
+async function assertViewerTarget(userId: string): Promise<string | null> {
+  const users = await listUsers();
+  const target = users.find((u) => u.id === userId);
+  if (!target) return 'User not found.';
+  if (target.role === 'admin') return 'Admins are managed via script only.';
+  return null;
+}
+
 export async function createViewerAction(
   _prev: UserActionState,
   formData: FormData
@@ -361,6 +377,9 @@ export async function resetPasswordAction(
   const email = String(formData.get('email') ?? '');
   if (!userId) return { error: 'Missing user.' };
 
+  const guardError = await assertViewerTarget(userId);
+  if (guardError) return { error: guardError };
+
   // Always generated — no manual entry, which keeps weak/reused passwords
   // out of the loop.
   const password = generatePassword();
@@ -383,6 +402,10 @@ export async function setUserSlugsAction(
 
   const userId = String(formData.get('userId') ?? '');
   if (!userId) return { error: 'Missing user.' };
+
+  const guardError = await assertViewerTarget(userId);
+  if (guardError) return { error: guardError };
+
   const slugs = formData.getAll('slugs').map(String);
 
   try {
@@ -411,14 +434,8 @@ export async function setUserActiveAction(
     return { error: 'Tick the confirmation to deactivate this user.' };
   }
 
-  // Looked up server-side rather than trusted from a hidden field — a
-  // client-rendered role badge could be stale, and admins are managed via
-  // script only, so this must hold even if the UI never offers the action.
-  const users = await listUsers();
-  const target = users.find((u) => u.id === userId);
-  if (target?.role === 'admin') {
-    return { error: 'Admins are managed via script only.' };
-  }
+  const guardError = await assertViewerTarget(userId);
+  if (guardError) return { error: guardError };
 
   try {
     await setUserActive(userId, active);
