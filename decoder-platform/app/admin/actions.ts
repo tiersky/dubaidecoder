@@ -12,7 +12,9 @@ import {
   deleteDraft,
   publishDraft,
   getPublishedConfig,
+  applyTweaks,
   DraftRecord,
+  TweakInput,
 } from '@/lib/versions/store';
 import { verifyAgainstWorkbook } from '@/lib/parser/verify';
 import { VersionConfig } from '@/lib/config/types';
@@ -247,5 +249,44 @@ export async function publishDraftAction(
 
   revalidatePath('/' + slug);
   revalidatePath('/admin');
+  redirect('/' + slug);
+}
+
+export async function applyTweaksAction(
+  _prev: AdminActionState,
+  formData: FormData
+): Promise<AdminActionState> {
+  const { userId } = await requireAdmin();
+  const slug = String(formData.get('slug') ?? '');
+  const config = await getPublishedConfig(slug).catch(() => null);
+  if (!config) return { error: `No published version "${slug}".` };
+
+  const tweaks: TweakInput = {
+    defaultBudget: Number(formData.get('defaultBudget')) || undefined,
+    currency: String(formData.get('currency') ?? '') || undefined,
+    weights: Object.fromEntries(
+      config.metrics.map((m) => [m.key, Number(formData.get(`weight:${m.key}`) ?? m.weight)])
+    ),
+    marketEnabled: Object.fromEntries(
+      config.markets.map((m) => [m.name, formData.get(`market:${m.name}`) === 'on'])
+    ),
+  };
+
+  try {
+    await applyTweaks(slug, tweaks, { createdBy: userId || null });
+  } catch (e) {
+    // applyTweaks throws its own labelled validation messages (unknown
+    // metric/market, invalid tweaked config) which are safe to surface —
+    // anything else (Supabase error text, etc.) collapses to a generic
+    // message, matching the convention used elsewhere in this file.
+    const message = e instanceof Error ? e.message : '';
+    const safe =
+      message.startsWith('unknown metric key') ||
+      message.startsWith('unknown market') ||
+      message.startsWith('tweaked config invalid');
+    return { error: safe ? message : 'Tweak failed — try again.' };
+  }
+
+  revalidatePath('/' + slug);
   redirect('/' + slug);
 }
