@@ -16,6 +16,13 @@ not by branch**. Every push to `main` deploys each changed app to its own URL.
 | DHRE Prioritization | Dubai Holding Real Estate | `dhre-decoder/` | `dhre-decoder` | dhre-decoder.vercel.app | 28 |
 | Decoder Platform (all new versions) | multi-client | decoder-platform/ | country-decoders | country-decoders.vercel.app | dynamic |
 
+> **Decoder Platform admin (Aug 2026):** the platform now has a full admin UI at
+> `/admin` — upload a model workbook (auto-detect + confirm screen), save drafts,
+> preview the real dashboard before publishing, quick tweaks (budget/currency/
+> markets/weights, instant new revision), and user management (create viewers,
+> assign projects, reset passwords, deactivate). New client versions no longer
+> need a code fork — upload the workbook, confirm, publish.
+
 > **Note:** the Vercel project named `country-decoder` has its Root Directory
 > set to `jumeirah-decoder`, so country-decoder.vercel.app serves the Jumeirah
 > app. The original Dubai Tourism app is not deployed anywhere right now. To
