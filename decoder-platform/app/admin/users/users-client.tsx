@@ -5,6 +5,7 @@ import Link from 'next/link';
 import type { PlatformUser } from '@/lib/users/admin';
 import {
   createViewerAction,
+  createAdminAction,
   resetPasswordAction,
   setUserSlugsAction,
   setUserActiveAction,
@@ -128,6 +129,74 @@ function CreateViewerForm({ publishedSlugs }: { publishedSlugs: string[] }) {
         className="rounded-lg bg-slate-800 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-60"
       >
         {pending ? 'Creating…' : 'Create viewer'}
+      </button>
+    </form>
+  );
+}
+
+function CreateAdminForm() {
+  const [state, formAction, pending] = useActionState(createAdminAction, initialState);
+  const [confirmed, setConfirmed] = useState(false);
+
+  return (
+    <form action={formAction} className="glass-card space-y-6 border-l-4 border-l-amber-400 p-8">
+      <div>
+        <h2 className="text-lg font-semibold text-slate-800">Create admin</h2>
+        <p className="mt-1 text-sm text-amber-800">
+          Admins get full access to every project, this admin area, and user management. Existing
+          admins can only be changed via the server script.
+        </p>
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div>
+          <label htmlFor="admin-email" className="block text-xs font-medium text-slate-600">
+            Email
+          </label>
+          <input
+            id="admin-email"
+            name="email"
+            type="email"
+            required
+            className="glass-input mt-1 w-full rounded-lg px-3 py-2 text-sm text-slate-800"
+          />
+        </div>
+        <div>
+          <label htmlFor="admin-password" className="block text-xs font-medium text-slate-600">
+            Password (leave blank to generate)
+          </label>
+          <input
+            id="admin-password"
+            name="password"
+            type="text"
+            className="glass-input mt-1 w-full rounded-lg px-3 py-2 text-sm text-slate-800"
+          />
+        </div>
+      </div>
+
+      <label className="glass-input flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-amber-800">
+        <input
+          type="checkbox"
+          name="confirmAdmin"
+          checked={confirmed}
+          onChange={(e) => setConfirmed(e.target.checked)}
+        />
+        I understand this account will have full admin access.
+      </label>
+
+      {state?.error && (
+        <p role="alert" aria-live="polite" className="text-sm text-red-600">
+          {state.error}
+        </p>
+      )}
+      <ShowOnceBox state={state} />
+
+      <button
+        type="submit"
+        disabled={pending || !confirmed}
+        className="rounded-lg bg-amber-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-amber-500 disabled:cursor-not-allowed disabled:opacity-60"
+      >
+        {pending ? 'Creating…' : 'Create admin'}
       </button>
     </form>
   );
@@ -308,6 +377,7 @@ export function UsersClient({
         </div>
 
         <CreateViewerForm publishedSlugs={publishedSlugs} />
+        <CreateAdminForm />
 
         <div className="glass-card p-8">
           <h2 className="text-lg font-semibold text-slate-800">All users</h2>

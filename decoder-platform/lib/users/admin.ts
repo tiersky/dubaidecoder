@@ -58,6 +58,20 @@ export async function createViewer(input: { email: string; password: string; slu
   return toPlatformUser(data.user as Parameters<typeof toPlatformUser>[0]);
 }
 
+/** Admins see every project and the whole /admin area; allowed_slugs is
+ * irrelevant for them and stored empty. The UI gates this behind an explicit
+ * confirmation — existing admins still cannot be modified from the UI. */
+export async function createAdmin(input: { email: string; password: string }) {
+  const { data, error } = await serviceClient().auth.admin.createUser({
+    email: input.email,
+    password: input.password,
+    email_confirm: true,
+    app_metadata: { role: 'admin', allowed_slugs: [] },
+  });
+  if (error || !data.user) throw new Error(`create failed: ${error?.message ?? 'no user'}`);
+  return toPlatformUser(data.user as Parameters<typeof toPlatformUser>[0]);
+}
+
 export async function resetPassword(userId: string, password: string): Promise<void> {
   const { error } = await serviceClient().auth.admin.updateUserById(userId, { password });
   if (error) throw new Error(`password reset failed: ${error.message}`);

@@ -10,7 +10,7 @@ vi.mock('../supabase/admin', () => ({
   serviceClient: () => ({ auth: { admin: adminApi } }),
 }));
 
-import { listUsers, createViewer, setSlugs, setActive, generatePassword } from './admin';
+import { listUsers, createViewer, createAdmin, setSlugs, setActive, generatePassword } from './admin';
 
 const rawUser = (over: object = {}) => ({
   id: 'u1', email: 'v@x.test', last_sign_in_at: '2026-08-01T00:00:00Z',
@@ -53,6 +53,23 @@ describe('createViewer', () => {
   it('rejects malformed slugs', async () => {
     await expect(createViewer({ email: 'v@x.test', password: 'x'.repeat(16), slugs: ['Bad Slug!'] }))
       .rejects.toThrow(/slug/i);
+  });
+});
+
+describe('createAdmin', () => {
+  it('creates with admin role and empty allowed_slugs, email confirmed', async () => {
+    adminApi.createUser.mockResolvedValue({
+      data: { user: rawUser({ app_metadata: { role: 'admin', allowed_slugs: [] } }) },
+      error: null,
+    });
+    const created = await createAdmin({ email: 'a@x.test', password: 'pw-123456789012345' });
+    expect(adminApi.createUser).toHaveBeenCalledWith({
+      email: 'a@x.test',
+      password: 'pw-123456789012345',
+      email_confirm: true,
+      app_metadata: { role: 'admin', allowed_slugs: [] },
+    });
+    expect(created.role).toBe('admin');
   });
 });
 

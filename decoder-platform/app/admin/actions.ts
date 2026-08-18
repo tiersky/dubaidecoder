@@ -21,6 +21,7 @@ import { VersionConfig } from '@/lib/config/types';
 import {
   listUsers,
   createViewer,
+  createAdmin,
   resetPassword as resetUserPassword,
   setSlugs as setUserSlugs,
   setActive as setUserActive,
@@ -360,6 +361,36 @@ export async function createViewerAction(
     const message = e instanceof Error ? e.message : '';
     const safe = message.startsWith('invalid slug');
     return { error: safe ? message : 'Create failed — try again.' };
+  }
+
+  revalidatePath('/admin/users');
+  // Shown once on this response only — never persisted or queryable again.
+  return { createdPassword: password, forEmail: email };
+}
+
+export async function createAdminAction(
+  _prev: UserActionState,
+  formData: FormData
+): Promise<UserActionState> {
+  await requireAdmin();
+
+  const email = String(formData.get('email') ?? '').trim();
+  if (!email) return { error: 'Email is required.' };
+  if (formData.get('confirmAdmin') !== 'on') {
+    return {
+      error:
+        'Admins get full access to every project and this admin area. Tick the confirmation to create one.',
+    };
+  }
+
+  const submittedPassword = String(formData.get('password') ?? '');
+  const password = submittedPassword !== '' ? submittedPassword : generatePassword();
+
+  try {
+    await createAdmin({ email, password });
+  } catch {
+    // Raw Supabase error text (e.g. duplicate email) never reaches the browser.
+    return { error: 'Create failed — try again.' };
   }
 
   revalidatePath('/admin/users');
