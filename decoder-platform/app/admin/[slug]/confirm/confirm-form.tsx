@@ -1,6 +1,6 @@
 'use client';
 
-import { useActionState } from 'react';
+import { useActionState, useState } from 'react';
 import Link from 'next/link';
 import type { DraftRecord } from '@/lib/versions/store';
 import type { VerificationCheck } from '@/lib/parser/verify';
@@ -16,8 +16,15 @@ export function ConfirmForm({ draft }: { draft: DraftRecord }) {
     initialState
   );
 
+  // Track which button was clicked last so the error banner reflects the
+  // most recent submission, not whichever action last happened to have an
+  // error set — useActionState state persists per hook across submits, so
+  // a stale save error would otherwise outlive a later, differently-failing
+  // publish attempt (or vice versa).
+  const [lastIntent, setLastIntent] = useState<'save' | 'publish' | null>(null);
+
   const { config, verify } = draft;
-  const state = saveState.error ? saveState : publishState;
+  const state = lastIntent === 'publish' ? publishState : saveState;
   const pending = savePending || publishPending;
 
   const worstChecks: VerificationCheck[] = verify
@@ -226,6 +233,7 @@ export function ConfirmForm({ draft }: { draft: DraftRecord }) {
           <button
             type="submit"
             formAction={saveAction}
+            onClick={() => setLastIntent('save')}
             disabled={pending}
             className="glass-input glass-card-hover rounded-lg px-4 py-2 text-sm font-medium text-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
           >
@@ -234,6 +242,7 @@ export function ConfirmForm({ draft }: { draft: DraftRecord }) {
           <button
             type="submit"
             formAction={publishAction}
+            onClick={() => setLastIntent('publish')}
             disabled={pending}
             className="rounded-lg bg-slate-800 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-60"
           >

@@ -183,21 +183,34 @@ async function applyAndSaveDraft(
   const edited = applyDraftEdits(draft.config, editsFromForm(formData, draft.config));
   if (!edited.ok) return { error: `Edits invalid: ${edited.errors.join('; ')}` };
 
-  const bytes = await downloadDraftWorkbook(slug);
-  const { candidates } = detectCandidates(bytes);
-  const candidate = candidates[draft.sourceIndex];
-  const verify = candidate ? verifyAgainstWorkbook(edited.config, candidate) : null;
+  // Storage/parse failures here are raw library text (e.g. Supabase "Object
+  // not found") — never surface that verbatim, and never let it throw past
+  // this action: an uncaught throw would hit the confirm page's error
+  // boundary and wipe out every edited field the admin just typed.
+  let verify;
+  try {
+    const bytes = await downloadDraftWorkbook(slug);
+    const { candidates } = detectCandidates(bytes);
+    const candidate = candidates[draft.sourceIndex];
+    verify = candidate ? verifyAgainstWorkbook(edited.config, candidate) : null;
+  } catch {
+    return { error: 'Could not re-read the stored workbook. Try re-uploading.' };
+  }
 
-  await saveDraft({
-    slug,
-    name: edited.config.name,
-    config: edited.config,
-    workbookPath: draft.workbookPath,
-    sourceSheet: draft.sourceSheet,
-    sourceIndex: draft.sourceIndex,
-    verify,
-    createdBy: userId || null,
-  });
+  try {
+    await saveDraft({
+      slug,
+      name: edited.config.name,
+      config: edited.config,
+      workbookPath: draft.workbookPath,
+      sourceSheet: draft.sourceSheet,
+      sourceIndex: draft.sourceIndex,
+      verify,
+      createdBy: userId || null,
+    });
+  } catch {
+    return { error: 'Saving the draft failed — try again.' };
+  }
 
   return { draft };
 }
