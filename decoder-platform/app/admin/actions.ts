@@ -5,8 +5,17 @@ import { revalidatePath } from 'next/cache';
 import { getAccess } from '@/lib/auth/require';
 import { serverClient } from '@/lib/supabase/server';
 import { putDraftWorkbook, downloadDraftWorkbook, validateWorkbookFile } from '@/lib/storage/workbooks';
-import { detectCandidates, buildDraft } from '@/lib/admin/upload-core';
-import { saveDraft, deleteDraft, getPublishedConfig } from '@/lib/versions/store';
+import { detectCandidates, buildDraft, applyDraftEdits, DraftEdits } from '@/lib/admin/upload-core';
+import {
+  getDraft,
+  saveDraft,
+  deleteDraft,
+  publishDraft,
+  getPublishedConfig,
+  DraftRecord,
+} from '@/lib/versions/store';
+import { verifyAgainstWorkbook } from '@/lib/parser/verify';
+import { VersionConfig } from '@/lib/config/types';
 
 export interface AdminActionState {
   error?: string;
@@ -133,4 +142,97 @@ export async function deleteDraftAction(formData: FormData): Promise<void> {
   await deleteDraft(String(formData.get('slug') ?? ''));
   revalidatePath('/admin');
   redirect('/admin');
+}
+
+function editsFromForm(formData: FormData, config: VersionConfig): DraftEdits {
+  const edits: DraftEdits = {
+    name: String(formData.get('name') ?? '') || undefined,
+    currency: String(formData.get('currency') ?? '') || undefined,
+    defaultBudget: Number(formData.get('defaultBudget')) || undefined,
+    weights: {},
+    directions: {},
+    labels: {},
+    marketEnabled: {},
+  };
+  for (const m of config.metrics) {
+    edits.weights![m.key] = Number(formData.get(`weight:${m.key}`) ?? m.weight);
+    const dir = String(formData.get(`direction:${m.key}`) ?? m.direction);
+    edits.directions![m.key] = dir === 'lower' ? 'lower' : 'higher';
+    edits.labels![m.key] = String(formData.get(`label:${m.key}`) ?? m.label);
+  }
+  for (const mk of config.markets) {
+    // checkboxes: present in formData only when checked
+    edits.marketEnabled![mk.name] = formData.get(`market:${mk.name}`) === 'on';
+  }
+  return edits;
+}
+
+/**
+ * Applies the confirm form's edits to the stored draft, recomputes verify
+ * against the original workbook, and saves. Shared by save-draft and
+ * publish so unsaved edits are never dropped on publish.
+ */
+async function applyAndSaveDraft(
+  slug: string,
+  formData: FormData,
+  userId: string
+): Promise<{ error: string } | { draft: DraftRecord }> {
+  const draft = await getDraft(slug);
+  if (!draft) return { error: `No draft for "${slug}" — it may have been published or deleted.` };
+
+  const edited = applyDraftEdits(draft.config, editsFromForm(formData, draft.config));
+  if (!edited.ok) return { error: `Edits invalid: ${edited.errors.join('; ')}` };
+
+  const bytes = await downloadDraftWorkbook(slug);
+  const { candidates } = detectCandidates(bytes);
+  const candidate = candidates[draft.sourceIndex];
+  const verify = candidate ? verifyAgainstWorkbook(edited.config, candidate) : null;
+
+  await saveDraft({
+    slug,
+    name: edited.config.name,
+    config: edited.config,
+    workbookPath: draft.workbookPath,
+    sourceSheet: draft.sourceSheet,
+    sourceIndex: draft.sourceIndex,
+    verify,
+    createdBy: userId || null,
+  });
+
+  return { draft };
+}
+
+export async function saveDraftEditsAction(
+  _prev: AdminActionState,
+  formData: FormData
+): Promise<AdminActionState> {
+  const { userId } = await requireAdmin();
+  const slug = String(formData.get('slug') ?? '');
+
+  const result = await applyAndSaveDraft(slug, formData, userId);
+  if ('error' in result) return { error: result.error };
+
+  redirect('/admin');
+}
+
+export async function publishDraftAction(
+  _prev: AdminActionState,
+  formData: FormData
+): Promise<AdminActionState> {
+  const { userId } = await requireAdmin();
+  const slug = String(formData.get('slug') ?? '');
+
+  const result = await applyAndSaveDraft(slug, formData, userId);
+  if ('error' in result) return { error: result.error };
+
+  try {
+    await publishDraft(slug, { createdBy: userId || null });
+  } catch (e) {
+    // Draft row is intact by construction (publishDraft cleans up only after success).
+    return { error: e instanceof Error ? e.message : 'Publish failed.' };
+  }
+
+  revalidatePath('/' + slug);
+  revalidatePath('/admin');
+  redirect('/' + slug);
 }
