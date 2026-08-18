@@ -20,6 +20,7 @@ export default async function proxy(request: NextRequest) {
           );
         },
       },
+      cookieOptions: { secure: process.env.NODE_ENV === 'production' },
     }
   );
 
