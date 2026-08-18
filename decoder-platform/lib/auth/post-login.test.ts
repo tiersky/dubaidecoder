@@ -21,4 +21,9 @@ describe('postLoginPath', () => {
     expect(postLoginPath(viewer(['egypt']), null)).toBe('/egypt');
     expect(postLoginPath(viewer(['egypt', 'alula']), null)).toBe('/select');
   });
+  it('rejects backslash and control-character next values (browser URL normalization)', () => {
+    expect(postLoginPath(admin, '/\\evil.example')).toBe('/admin');
+    expect(postLoginPath(admin, '/\t/evil.example')).toBe('/admin');
+    expect(postLoginPath(admin, '/\n/evil.example')).toBe('/admin');
+  });
 });
