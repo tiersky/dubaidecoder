@@ -157,7 +157,11 @@ function editsFromForm(formData: FormData, config: VersionConfig): DraftEdits {
     marketEnabled: {},
   };
   for (const m of config.metrics) {
-    edits.weights![m.key] = Number(formData.get(`weight:${m.key}`) ?? m.weight);
+    // '' is not null/undefined, so a plain `?? m.weight` fallback never
+    // fires for a cleared field — Number('') === 0 would silently zero the
+    // weight. Treat empty-string the same as absent.
+    const rawWeight = formData.get(`weight:${m.key}`);
+    edits.weights![m.key] = rawWeight === null || rawWeight === '' ? m.weight : Number(rawWeight);
     const dir = String(formData.get(`direction:${m.key}`) ?? m.direction);
     edits.directions![m.key] = dir === 'lower' ? 'lower' : 'higher';
     edits.labels![m.key] = String(formData.get(`label:${m.key}`) ?? m.label);
@@ -265,7 +269,13 @@ export async function applyTweaksAction(
     defaultBudget: Number(formData.get('defaultBudget')) || undefined,
     currency: String(formData.get('currency') ?? '') || undefined,
     weights: Object.fromEntries(
-      config.metrics.map((m) => [m.key, Number(formData.get(`weight:${m.key}`) ?? m.weight)])
+      config.metrics.map((m) => {
+        // '' is not null/undefined, so a plain `?? m.weight` fallback never
+        // fires for a cleared field — Number('') === 0 would silently zero
+        // the weight. Treat empty-string the same as absent.
+        const raw = formData.get(`weight:${m.key}`);
+        return [m.key, raw === null || raw === '' ? m.weight : Number(raw)];
+      })
     ),
     marketEnabled: Object.fromEntries(
       config.markets.map((m) => [m.name, formData.get(`market:${m.name}`) === 'on'])
