@@ -361,6 +361,42 @@ describe('publishDraft', () => {
     expect(await getDraft('egypt')).toBeNull();
   });
 
+  it('re-invokes workbookPathFor with the recomputed revision on a 23505 race', async () => {
+    await saveDraft({
+      slug: 'egypt',
+      name: 'Egypt Decoder',
+      config,
+      workbookPath: 'egypt/draft.xlsx',
+      sourceSheet: null,
+      sourceIndex: 0,
+      verify: null,
+    });
+    // Seed an existing published version at revision 1, so the draft
+    // publish below will attempt revision 2 first.
+    await publishVersion(config, {});
+    const id = mockDb.tables.versions[0].id as number;
+    mockDb.queueInsertFailure(
+      'version_revisions',
+      { code: '23505', message: 'duplicate key value violates unique constraint' },
+      // Phantom row: simulates a concurrent publish that landed revision 2
+      // first — this is what actually causes the 23505 in a real DB.
+      { id: 999, version_id: id, revision: 2, config, workbook_path: null, created_at: new Date().toISOString() }
+    );
+
+    const { revision } = await publishDraft('egypt');
+
+    expect(revision).toBe(3);
+    // The hook must be re-invoked with the recomputed revision, not just
+    // called once with the (now stale) first-attempt number.
+    expect(copyDraftToRevision).toHaveBeenNthCalledWith(1, 'egypt', 2);
+    expect(copyDraftToRevision).toHaveBeenNthCalledWith(2, 'egypt', 3);
+    const revRow = mockDb.tables.version_revisions.find(
+      (r) => r.version_id === id && r.revision === 3
+    );
+    expect(revRow).toBeDefined();
+    expect(revRow!.workbook_path).toBe('egypt/rev-3.xlsx');
+  });
+
   it('throws and leaves the draft row intact when the version upsert fails', async () => {
     await saveDraft({
       slug: 'egypt',

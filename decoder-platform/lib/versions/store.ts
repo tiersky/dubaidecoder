@@ -229,14 +229,20 @@ export async function applyTweaks(
 
   // Carry the last revision's workbook forward — tweaks have no new file.
   const db = serviceClient();
-  const { data: verRow } = await db.from('versions').select('id').eq('slug', slug).single();
-  const { data: lastRev } = await db
+  const { data: verRow, error: verErr } = await db
+    .from('versions')
+    .select('id')
+    .eq('slug', slug)
+    .single();
+  if (verErr) throw new Error(`version lookup failed: ${verErr.message}`);
+  const { data: lastRev, error: lastRevErr } = await db
     .from('version_revisions')
     .select('workbook_path')
-    .eq('version_id', verRow!.id)
+    .eq('version_id', verRow.id)
     .order('revision', { ascending: false })
     .limit(1)
     .maybeSingle();
+  if (lastRevErr) throw new Error(`previous revision lookup failed: ${lastRevErr.message}`);
   const { revision } = await publishVersion(v.config, {
     createdBy: opts.createdBy,
     workbookPath: lastRev?.workbook_path ?? null,
