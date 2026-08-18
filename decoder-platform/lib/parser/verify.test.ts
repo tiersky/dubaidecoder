@@ -61,3 +61,25 @@ describe('verifyAgainstWorkbook — detects tampering', () => {
     expect(report.maxScoreDelta).toBeGreaterThan(1);
   });
 });
+
+describe('verifyAgainstWorkbook — reasons', () => {
+  it('explains failures in reasons', () => {
+    const { candidate: egyptCandidate, config: egyptConfig } = build(EGYPT);
+    // Take the existing passing Egypt config/candidate fixture and corrupt
+    // one weight so scores drift past tolerance.
+    const bad = structuredClone(egyptConfig);
+    bad.metrics[0].weight += 25;
+    const report = verifyAgainstWorkbook(bad, egyptCandidate);
+    expect(report.ok).toBe(false);
+    expect(report.reasons.length).toBeGreaterThan(0);
+    expect(report.reasons.join(' ')).toMatch(/exceeds/);
+  });
+
+  it('reports empty-comparison as a reason', () => {
+    const { candidate: egyptCandidate, config: egyptConfig } = build(EGYPT);
+    const noOutputs = { ...egyptCandidate, outputs: null, indexTable: null };
+    const report = verifyAgainstWorkbook(egyptConfig, noOutputs);
+    expect(report.ok).toBe(false);
+    expect(report.reasons[0]).toMatch(/nothing to compare/i);
+  });
+});
