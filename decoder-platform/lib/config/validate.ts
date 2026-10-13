@@ -26,6 +26,12 @@ const configSchema = z.object({
   defaultBudget: z.number().positive(),
   metrics: z.array(metricSchema).min(1),
   markets: z.array(marketSchema).min(2),
+  allocation: z
+    .object({
+      fixed: z.record(z.string(), z.number().min(0)),
+      shares: z.record(z.string(), z.number().min(0)),
+    })
+    .optional(),
 });
 
 export function validateConfig(
@@ -62,6 +68,17 @@ export function validateConfig(
       if (!(key in market.values))
         errors.push(`markets.${market.name}: missing value entry for metric "${key}"`);
     }
+  }
+
+  if (cfg.allocation) {
+    const names = new Set(marketNames);
+    const listed = [...Object.keys(cfg.allocation.fixed), ...Object.keys(cfg.allocation.shares)];
+    for (const n of listed)
+      if (!names.has(n)) errors.push(`allocation: unknown market "${n}"`);
+    if (new Set(listed).size !== listed.length)
+      errors.push('allocation: a market is listed in both fixed and shares');
+    for (const n of marketNames)
+      if (!listed.includes(n)) errors.push(`allocation: market "${n}" has no fixed amount or share`);
   }
 
   if (errors.length > 0) return { ok: false, errors };

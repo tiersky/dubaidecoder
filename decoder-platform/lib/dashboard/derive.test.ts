@@ -64,3 +64,27 @@ describe('computeAllocations', () => {
     expect(rows.every((r) => r.budget === 0)).toBe(true);
   });
 });
+
+describe('fixed allocation', () => {
+  const fixedConfig: VersionConfig = {
+    ...config,
+    allocation: {
+      fixed: { [egyptMarkets[0].name]: 1000000 },
+      shares: Object.fromEntries(egyptMarkets.slice(1).map((m, i) => [m.name, i + 1])),
+    },
+  };
+  const vm = deriveDashboard(fixedConfig);
+
+  it('overrides the score-based split on the view model and in allocations', () => {
+    const first = vm.markets[0];
+    expect(first.split).toBeCloseTo(1000000 / 14000000, 9);
+    const rows = computeAllocations(
+      vm.markets, vm.metrics, vm.defaultWeights,
+      new Set(vm.markets.filter((m) => m.enabled).map((m) => m.name)),
+      14000000, vm.allocation
+    );
+    expect(rows[0].budget).toBe(first.enabled ? 1000000 : 0);
+    const total = rows.reduce((a, r) => a + r.budget, 0);
+    expect(total).toBeCloseTo(14000000, 3);
+  });
+});

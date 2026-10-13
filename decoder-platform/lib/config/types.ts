@@ -9,6 +9,12 @@ export interface MarketRow {
   values: Record<string, number | null>;
 }
 
+/** Overrides the score-based split: see lib/model/allocate.ts. Keyed by market name. */
+export interface FixedAllocation {
+  fixed: Record<string, number>;  // absolute amounts, taken off the top
+  shares: Record<string, number>; // relative shares of the remainder
+}
+
 export interface VersionConfig {
   name: string;          // "Qatar Decoder"
   slug: string;          // "qatar" — ^[a-z0-9-]+$
@@ -16,4 +22,5 @@ export interface VersionConfig {
   defaultBudget: number; // > 0
   metrics: MetricDef[];
   markets: MarketRow[];
+  allocation?: FixedAllocation;
 }

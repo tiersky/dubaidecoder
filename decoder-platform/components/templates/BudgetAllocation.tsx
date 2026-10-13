@@ -42,8 +42,9 @@ export default function BudgetAllocation({ vm }: BudgetAllocationProps) {
   );
 
   const allocations = useMemo(
-    () => computeAllocations(vm.markets, vm.metrics, weights, enabledNames, totalBudget),
-    [vm.markets, vm.metrics, weights, enabledNames, totalBudget]
+    () =>
+      computeAllocations(vm.markets, vm.metrics, weights, enabledNames, totalBudget, vm.allocation),
+    [vm.markets, vm.metrics, weights, enabledNames, totalBudget, vm.allocation]
   );
 
   return (
@@ -108,6 +109,12 @@ export default function BudgetAllocation({ vm }: BudgetAllocationProps) {
               {enabledMarkets.length === 1 ? 'market' : 'markets'} • toggle
               markets below to reallocate
             </p>
+            {vm.allocation && (
+              <p className="text-xs text-slate-500 mb-4">
+                This version uses a fixed budget split. Model weights change the
+                scores, not the budget.
+              </p>
+            )}
             <BudgetInputField
               value={totalBudget}
               onChange={setTotalBudget}

@@ -61,3 +61,26 @@ describe('validateConfig', () => {
     if (!r.ok) expect(r.errors.join(' ')).toMatch(/reserved/i);
   });
 });
+
+describe('validateConfig allocation', () => {
+  const base = {
+    name: 'X', slug: 'x', currency: 'USD', defaultBudget: 100,
+    metrics: [{ key: 'a', label: 'A', weight: 1, direction: 'higher' }],
+    markets: ['P', 'Q'].map((name) => ({ name, iso2: null, lat: null, lng: null, enabled: true, values: { a: 1 } })),
+  };
+
+  it('accepts and keeps a complete allocation', () => {
+    const r = validateConfig({ ...base, allocation: { fixed: { P: 10 }, shares: { Q: 1 } } });
+    expect(r.ok && r.config.allocation).toEqual({ fixed: { P: 10 }, shares: { Q: 1 } });
+  });
+
+  it('rejects unknown, duplicated and missing markets', () => {
+    const r = validateConfig({ ...base, allocation: { fixed: { P: 10, Z: 1 }, shares: { P: 1 } } });
+    expect(r.ok).toBe(false);
+    if (!r.ok) {
+      expect(r.errors).toContain('allocation: unknown market "Z"');
+      expect(r.errors).toContain('allocation: a market is listed in both fixed and shares');
+      expect(r.errors).toContain('allocation: market "Q" has no fixed amount or share');
+    }
+  });
+});

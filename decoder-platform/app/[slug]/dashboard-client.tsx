@@ -56,9 +56,10 @@ export default function DashboardClient({ vm }: DashboardClientProps) {
         vm.metrics,
         vm.defaultWeights,
         defaultEnabledNames,
-        vm.defaultBudget
+        vm.defaultBudget,
+        vm.allocation
       ),
-    [vm.markets, vm.metrics, vm.defaultWeights, defaultEnabledNames, vm.defaultBudget]
+    [vm.markets, vm.metrics, vm.defaultWeights, defaultEnabledNames, vm.defaultBudget, vm.allocation]
   );
 
   const selectedMarket = selectedMarketName

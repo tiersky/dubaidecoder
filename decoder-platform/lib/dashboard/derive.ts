@@ -1,5 +1,6 @@
 import { MetricDef, computeModel } from '../model/score';
-import { VersionConfig } from '../config/types';
+import { FixedAllocation, VersionConfig } from '../config/types';
+import { applyFixedAllocation } from '../model/allocate';
 
 export interface MarketVm {
   name: string;
@@ -29,6 +30,7 @@ export interface DashboardVm {
   axisOptions: AxisOption[];
   bubbleOptions: AxisOption[];
   defaults: { xAxis: string; yAxis: string; bubbleSize: string };
+  allocation?: FixedAllocation;
 }
 
 export function deriveDashboard(config: VersionConfig): DashboardVm {
@@ -37,6 +39,13 @@ export function deriveDashboard(config: VersionConfig): DashboardVm {
     config.metrics
   );
   const byName = new Map(result.markets.map((m) => [m.name, m]));
+  const fixedBudgets = config.allocation
+    ? applyFixedAllocation(
+        config.allocation,
+        new Set(config.markets.filter((m) => m.enabled).map((m) => m.name)),
+        config.defaultBudget
+      )
+    : null;
   const markets: MarketVm[] = config.markets.map((m) => {
     const r = byName.get(m.name)!;
     return {
@@ -48,7 +57,7 @@ export function deriveDashboard(config: VersionConfig): DashboardVm {
       values: m.values,
       indices: r.indices,
       score: r.score,
-      split: r.split,
+      split: fixedBudgets ? (fixedBudgets.get(m.name) ?? 0) / config.defaultBudget : r.split,
     };
   });
   const metricOptions = config.metrics.map((m) => ({ value: m.key, label: m.label }));
@@ -76,6 +85,7 @@ export function deriveDashboard(config: VersionConfig): DashboardVm {
       yAxis: 'score',
       bubbleSize: 'budget',
     },
+    ...(config.allocation ? { allocation: config.allocation } : {}),
   };
 }
 
@@ -93,7 +103,8 @@ export function computeAllocations(
   metrics: MetricDef[],
   weights: Record<string, number>,
   enabledNames: Set<string>,
-  totalBudget: number
+  totalBudget: number,
+  allocation?: FixedAllocation
 ): AllocationRow[] {
   const weighted = metrics.map((m) => ({ ...m, weight: weights[m.key] ?? 0 }));
   const result = computeModel(
@@ -101,12 +112,20 @@ export function computeAllocations(
     weighted
   );
   const geo = new Map(markets.map((m) => [m.name, m.iso2]));
-  return result.markets.map((m) => ({
-    name: m.name,
-    iso2: geo.get(m.name) ?? null,
-    score: m.score,
-    split: m.split,
-    budget: m.split * totalBudget,
-    enabled: m.enabled,
-  }));
+  const fixedBudgets = allocation
+    ? applyFixedAllocation(allocation, enabledNames, totalBudget)
+    : null;
+  return result.markets.map((m) => {
+    const budget = fixedBudgets
+      ? m.enabled ? (fixedBudgets.get(m.name) ?? 0) : 0
+      : m.split * totalBudget;
+    return {
+      name: m.name,
+      iso2: geo.get(m.name) ?? null,
+      score: m.score,
+      split: fixedBudgets ? (totalBudget > 0 ? budget / totalBudget : 0) : m.split,
+      budget,
+      enabled: m.enabled,
+    };
+  });
 }
