@@ -1,4 +1,5 @@
 import { VersionConfig } from '../config/types';
+import { normalizeContext } from '../admin/upload-core';
 import { validateConfig } from '../config/validate';
 import { VerificationReport } from '../parser/verify';
 import { copyDraftToRevision, removeDraftWorkbook } from '../storage/workbooks';
@@ -105,6 +106,7 @@ export interface TweakInput {
   currency?: string;
   marketEnabled?: Record<string, boolean>; // by market name
   weights?: Record<string, number>; // by metric key
+  context?: { industry?: string; brief?: string }; // empty strings clear
 }
 
 function draftFromRow(row: Record<string, unknown>): DraftRecord {
@@ -214,6 +216,11 @@ export async function applyTweaks(
   const next: VersionConfig = structuredClone(config);
   if (tweaks.defaultBudget !== undefined) next.defaultBudget = tweaks.defaultBudget;
   if (tweaks.currency !== undefined) next.currency = tweaks.currency;
+  if (tweaks.context !== undefined) {
+    const ctx = normalizeContext(tweaks.context);
+    if (ctx) next.context = ctx;
+    else delete next.context;
+  }
   for (const [key, w] of Object.entries(tweaks.weights ?? {})) {
     const m = next.metrics.find((m) => m.key === key);
     if (!m) throw new Error(`unknown metric key: ${key}`);

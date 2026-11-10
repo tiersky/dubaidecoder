@@ -31,6 +31,7 @@ export interface DashboardVm {
   bubbleOptions: AxisOption[];
   defaults: { xAxis: string; yAxis: string; bubbleSize: string };
   allocation?: FixedAllocation;
+  industry?: string;
 }
 
 export function deriveDashboard(config: VersionConfig): DashboardVm {
@@ -86,6 +87,7 @@ export function deriveDashboard(config: VersionConfig): DashboardVm {
       bubbleSize: 'budget',
     },
     ...(config.allocation ? { allocation: config.allocation } : {}),
+    ...(config.context?.industry ? { industry: config.context.industry } : {}),
   };
 }
 

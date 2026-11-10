@@ -1,6 +1,7 @@
 'use client';
 
 import { useActionState } from 'react';
+import ContextFields from '@/components/admin/ContextFields';
 import Link from 'next/link';
 import type { VersionConfig } from '@/lib/config/types';
 import { applyTweaksAction } from '../../actions';
@@ -49,6 +50,7 @@ export function TweaksForm({ slug, config }: { slug: string; config: VersionConf
               className="glass-input mt-1 w-full rounded-lg px-3 py-2 text-sm text-slate-800 uppercase"
             />
           </div>
+          <ContextFields context={config.context} />
         </div>
       </div>
 

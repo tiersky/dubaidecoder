@@ -6,16 +6,17 @@ import { Chart } from 'react-chartjs-2';
 import { useMemo } from 'react';
 import ChartCard from '@/components/molecules/ChartCard';
 import { AllocationRow } from '@/lib/dashboard/derive';
+import {
+  INK,
+  RAMP_WHITE_TEXT_FROM,
+  TOOLTIP_CHART,
+  chartFont,
+  formatMoney,
+  rampColor,
+  toneScale,
+} from '@/lib/ui/theme';
 
 ChartJS.register(TreemapController, TreemapElement, Tooltip, Legend);
-
-const COLORS = [
-  '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6',
-  '#06b6d4', '#f97316', '#ec4899', '#14b8a6', '#6366f1',
-  '#84cc16', '#e11d48', '#0ea5e9', '#a855f7', '#22c55e',
-  '#eab308', '#f43f5e', '#0891b2', '#7c3aed', '#65a30d',
-  '#dc2626', '#0284c7', '#9333ea',
-];
 
 interface BudgetTreemapProps {
   allocations: AllocationRow[];
@@ -28,6 +29,7 @@ interface TreeRow {
   budget: number;
   split: number;
   color: string;
+  tone: number;
 }
 
 export default function BudgetTreemap({ allocations, currency }: BudgetTreemapProps) {
@@ -35,13 +37,19 @@ export default function BudgetTreemap({ allocations, currency }: BudgetTreemapPr
     const sorted = [...allocations]
       .filter((a) => a.budget > 0)
       .sort((a, b) => b.budget - a.budget);
-    return sorted.map((a, i) => ({
-      name: a.name,
-      iso2: a.iso2,
-      budget: a.budget,
-      split: a.split,
-      color: COLORS[i % COLORS.length],
-    }));
+    const scale = toneScale(sorted.map((a) => a.split));
+    return sorted.map((a) => {
+      // Same encoding as the map: darker = larger share.
+      const tone = 0.1 + 0.9 * scale(a.split);
+      return {
+        name: a.name,
+        iso2: a.iso2,
+        budget: a.budget,
+        split: a.split,
+        tone,
+        color: rampColor(tone),
+      };
+    });
   }, [allocations]);
 
   const data = useMemo(
@@ -50,18 +58,23 @@ export default function BudgetTreemap({ allocations, currency }: BudgetTreemapPr
         {
           tree: rows,
           key: 'budget',
-          borderWidth: 1,
-          borderColor: '#ffffff',
-          spacing: 1,
+          borderWidth: 0,
+          borderRadius: 8,
+          spacing: 2,
           backgroundColor: (ctx: { raw?: { _data?: TreeRow } }) =>
             ctx.raw?._data?.color ?? '#cbd5e1',
           labels: {
             display: true,
             align: 'left' as const,
             position: 'top' as const,
-            color: '#ffffff',
-            font: { family: 'Outfit', size: 11, weight: 'bold' as const },
-            padding: 6,
+            color: (ctx: { raw?: { _data?: TreeRow } }) =>
+              (ctx.raw?._data?.tone ?? 1) >= RAMP_WHITE_TEXT_FROM ? '#ffffff' : INK,
+            font: [
+              { family: chartFont(), size: 12.5, weight: 600 as const },
+              { family: chartFont(), size: 11.5, weight: 400 as const },
+            ],
+            padding: 9,
+            overflow: 'fit' as const,
             formatter: (ctx: { raw?: { _data?: TreeRow } }) => {
               const d = ctx.raw?._data;
               if (!d) return '';
@@ -79,6 +92,7 @@ export default function BudgetTreemap({ allocations, currency }: BudgetTreemapPr
     () => ({
       responsive: true,
       maintainAspectRatio: false,
+      animation: { duration: 600, easing: 'easeOutQuart' as const },
       plugins: {
         legend: { display: false },
         // chartjs-plugin-datalabels is registered globally elsewhere — it
@@ -86,12 +100,9 @@ export default function BudgetTreemap({ allocations, currency }: BudgetTreemapPr
         // top of the treemap's own white labels. Disable explicitly here.
         datalabels: { display: false },
         tooltip: {
-          backgroundColor: 'rgba(15, 23, 42, 0.92)',
-          titleFont: { family: 'Outfit', size: 12 },
-          bodyFont: { family: 'Outfit', size: 12 },
-          padding: 10,
-          cornerRadius: 8,
-          displayColors: false,
+          ...TOOLTIP_CHART,
+          titleFont: { family: chartFont(), size: 12, weight: 600 as const },
+          bodyFont: { family: chartFont(), size: 12 },
           callbacks: {
             title: (items: Array<{ raw?: { _data?: TreeRow } }>) =>
               items[0]?.raw?._data?.name ?? '',
@@ -100,7 +111,7 @@ export default function BudgetTreemap({ allocations, currency }: BudgetTreemapPr
               if (!d) return '';
               return [
                 `${(d.split * 100).toFixed(1)}% of budget`,
-                `${currency} ${Math.round(d.budget).toLocaleString()}`,
+                formatMoney(currency, d.budget),
               ];
             },
           },
@@ -112,8 +123,9 @@ export default function BudgetTreemap({ allocations, currency }: BudgetTreemapPr
 
   if (rows.length === 0) {
     return (
-      <ChartCard title="Budget Distribution" height="h-[420px]">
-        <div className="flex h-full items-center justify-center text-sm text-slate-400">
+      <ChartCard title="Budget distribution" className="h-full"
+      height="min-h-[360px] flex-1">
+        <div className="well flex h-full items-center justify-center px-6 text-center text-[13px] text-ink-2">
           No active countries — toggle markets on to allocate budget.
         </div>
       </ChartCard>
@@ -121,9 +133,16 @@ export default function BudgetTreemap({ allocations, currency }: BudgetTreemapPr
   }
 
   return (
-    <ChartCard title="Budget Distribution" height="h-[420px]">
-      {/* @ts-expect-error chartjs-chart-treemap registers a custom controller type not in @types */}
-      <Chart type="treemap" data={data} options={options} />
+    <ChartCard
+      title="Budget distribution"
+      subtitle="Area is proportional to budget; darker means a larger share"
+      className="h-full"
+      height="min-h-[360px] flex-1"
+    >
+      <div className="absolute inset-0">
+        {/* @ts-expect-error chartjs-chart-treemap registers a custom controller type not in @types */}
+        <Chart type="treemap" data={data} options={options} />
+      </div>
     </ChartCard>
   );
 }

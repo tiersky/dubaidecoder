@@ -11,6 +11,31 @@ const good = {
   markets: egyptMarkets.map((m) => ({ ...m, iso2: null, lat: null, lng: null })),
 };
 
+describe('validateConfig — context (industry/brief for AI analysis)', () => {
+  it('keeps an optional context with industry and brief', () => {
+    const r = validateConfig({
+      ...good,
+      context: { industry: 'Tourism & destination marketing', brief: 'Leisure travel to Egypt.' },
+    });
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.config.context).toEqual({
+      industry: 'Tourism & destination marketing',
+      brief: 'Leisure travel to Egypt.',
+    });
+  });
+
+  it('accepts configs without context (all existing versions)', () => {
+    const r = validateConfig(good);
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.config.context).toBeUndefined();
+  });
+
+  it('rejects an over-long brief', () => {
+    const r = validateConfig({ ...good, context: { brief: 'x'.repeat(2001) } });
+    expect(r.ok).toBe(false);
+  });
+});
+
 describe('validateConfig', () => {
   it('accepts a well-formed config', () => {
     const r = validateConfig(good);

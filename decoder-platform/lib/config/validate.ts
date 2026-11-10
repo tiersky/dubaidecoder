@@ -32,6 +32,12 @@ const configSchema = z.object({
       shares: z.record(z.string(), z.number().min(0)),
     })
     .optional(),
+  context: z
+    .object({
+      industry: z.string().max(120).optional(),
+      brief: z.string().max(2000).optional(),
+    })
+    .optional(),
 });
 
 export function validateConfig(

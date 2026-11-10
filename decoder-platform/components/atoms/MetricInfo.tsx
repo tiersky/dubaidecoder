@@ -39,7 +39,9 @@ export default function MetricInfo({ metric, label }: MetricInfoProps) {
     <span
       data-tooltip-id="metric-tooltip"
       data-tooltip-html={html}
-      className="inline-flex items-center text-slate-300 hover:text-slate-500 transition-colors cursor-help align-middle"
+      tabIndex={0}
+      aria-label={`About ${label ?? metric.label}`}
+      className="inline-flex items-center text-ink-3 hover:text-ink-2 transition-colors cursor-help align-middle rounded-full"
     >
       <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path

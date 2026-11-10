@@ -1,11 +1,13 @@
-import type { Metadata } from "next";
-import { Outfit } from "next/font/google";
+import type { Metadata, Viewport } from "next";
+import { Inter } from "next/font/google";
 import "./globals.css";
 
-const outfit = Outfit({
-  variable: "--font-outfit",
+// Apple devices render SF Pro via the system stack; Inter is the closest
+// stand-in everywhere else (Windows client laptops, meeting-room PCs).
+const inter = Inter({
+  variable: "--font-inter",
   subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700"],
+  display: "swap",
 });
 
 export const metadata: Metadata = {
@@ -13,9 +15,13 @@ export const metadata: Metadata = {
   description: "Country decoder dashboards",
 };
 
+export const viewport: Viewport = {
+  themeColor: "#eef1f6",
+};
+
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className={outfit.variable}>
+    <html lang="en" className={inter.variable}>
       <body className="font-sans antialiased">{children}</body>
     </html>
   );

@@ -15,6 +15,12 @@ export interface FixedAllocation {
   shares: Record<string, number>; // relative shares of the remainder
 }
 
+/** Version-level context for the AI market analysis. Admin-entered. */
+export interface VersionContext {
+  industry?: string; // "Real estate development", "Tourism & destination marketing"
+  brief?: string;    // what is being marketed, to whom, and why
+}
+
 export interface VersionConfig {
   name: string;          // "Qatar Decoder"
   slug: string;          // "qatar" — ^[a-z0-9-]+$
@@ -23,4 +29,5 @@ export interface VersionConfig {
   metrics: MetricDef[];
   markets: MarketRow[];
   allocation?: FixedAllocation;
+  context?: VersionContext;
 }

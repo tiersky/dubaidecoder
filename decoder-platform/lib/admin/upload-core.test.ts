@@ -89,6 +89,22 @@ describe('applyDraftEdits', () => {
     expect(edited.config.defaultBudget).toBe(5_000_000);
   });
 
+  it('sets and clears the AI context (industry, brief)', () => {
+    const { candidates } = detectCandidates(egyptBytes);
+    const built = buildDraft(candidates, 0, { slug: 'egypt', name: 'Egypt Decoder' });
+    if (!built.ok) throw new Error('build failed');
+    const set = applyDraftEdits(built.draft.config, {
+      context: { industry: '  Real estate development ', brief: 'Waterfront villas' },
+    });
+    expect(set.ok).toBe(true);
+    if (!set.ok) return;
+    expect(set.config.context).toEqual({ industry: 'Real estate development', brief: 'Waterfront villas' });
+
+    const cleared = applyDraftEdits(set.config, { context: { industry: '', brief: '' } });
+    expect(cleared.ok).toBe(true);
+    if (cleared.ok) expect(cleared.config.context).toBeUndefined();
+  });
+
   it('patches labels, name, and currency', () => {
     const { candidates } = detectCandidates(egyptBytes);
     const built = buildDraft(candidates, 0, { slug: 'egypt', name: 'Egypt Decoder' });

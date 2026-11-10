@@ -38,6 +38,19 @@ export interface DraftEdits {
   directions?: Record<string, 'higher' | 'lower'>;
   labels?: Record<string, string>;
   marketEnabled?: Record<string, boolean>;
+  /** Empty strings clear a field; an all-empty context is removed. */
+  context?: { industry?: string; brief?: string };
+}
+
+/** Trims, drops empty fields, and returns undefined when nothing is left. */
+export function normalizeContext(
+  input: { industry?: string; brief?: string } | undefined
+): VersionConfig['context'] {
+  if (!input) return undefined;
+  const industry = input.industry?.trim() || undefined;
+  const brief = input.brief?.trim() || undefined;
+  if (!industry && !brief) return undefined;
+  return { ...(industry && { industry }), ...(brief && { brief }) };
 }
 
 export function detectCandidates(
@@ -90,6 +103,11 @@ export function applyDraftEdits(
   if (edits.name !== undefined) next.name = edits.name;
   if (edits.currency !== undefined) next.currency = edits.currency;
   if (edits.defaultBudget !== undefined) next.defaultBudget = edits.defaultBudget;
+  if (edits.context !== undefined) {
+    const ctx = normalizeContext(edits.context);
+    if (ctx) next.context = ctx;
+    else delete next.context;
+  }
 
   for (const [key, patch] of [
     ['weights', (m: (typeof next.metrics)[number], v: number) => (m.weight = v)],

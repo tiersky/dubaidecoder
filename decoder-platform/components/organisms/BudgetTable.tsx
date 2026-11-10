@@ -2,8 +2,17 @@
 
 import { MarketVm, AllocationRow } from '@/lib/dashboard/derive';
 import { MetricDef } from '@/lib/model/score';
+import { useState } from 'react';
 import { fmt } from '@/lib/dashboard/format';
 import MetricInfo from '@/components/atoms/MetricInfo';
+import Switch from '@/components/atoms/Switch';
+import Flag from '@/components/atoms/Flag';
+import ShareBar from '@/components/atoms/ShareBar';
+import AnimatedNumber from '@/components/atoms/AnimatedNumber';
+import { formatMoney, relativeShare } from '@/lib/ui/theme';
+
+const fmtScore = (v: number) => v.toFixed(2);
+const fmtPct = (v: number) => `${(v * 100).toFixed(1)}%`;
 
 interface BudgetTableProps {
   markets: MarketVm[];
@@ -44,21 +53,47 @@ export default function BudgetTable({
 
   void totalBudget;
 
+  const maxSplit = Math.max(0, ...sorted.map((r) => (r.enabled ? r.split : 0)));
+  const fmtBudget = (v: number) => formatMoney(currency, v);
+  const activeCount = sorted.filter((r) => r.enabled).length;
+  // The pinned Market column only gets its own material once columns slide
+  // under it; at rest it must read as part of the card.
+  const [scrolled, setScrolled] = useState(false);
+  // On + Market are pinned together, so nothing scrolls out beside them.
+  const pinBg = `transition-[background-color,box-shadow] duration-200 ${
+    scrolled ? 'bg-[#f9fafc]' : 'bg-transparent'
+  }`;
+  const pinOn = `sticky left-0 z-10 w-[60px] min-w-[60px] ${pinBg}`;
+  const pinned = `sticky left-[60px] z-10 ${pinBg} ${
+    scrolled ? 'shadow-[6px_0_12px_-8px_rgba(0,0,0,0.18)]' : ''
+  }`;
+
   const headerCell =
-    'px-3 py-3 text-right uppercase tracking-wider text-slate-400 font-medium';
+    'px-3 py-3 text-right text-[11.5px] font-medium text-ink-2 whitespace-nowrap align-bottom last:pr-6';
 
   return (
-    <div className="glass-card overflow-hidden">
-      <div className="overflow-x-auto">
-        <table className="w-full text-xs">
+    <section className="glass-card overflow-hidden" aria-label="Allocation by market">
+      <div className="flex flex-wrap items-baseline justify-between gap-2 px-5 pb-1 pt-5 sm:px-6">
+        <h2 className="text-[15px] font-semibold text-ink">Allocation by market</h2>
+        <p className="text-xs text-ink-2">
+          <span className="num">{activeCount}</span> of <span className="num">{sorted.length}</span> markets
+          active • toggle markets to reallocate
+        </p>
+      </div>
+      <div
+        className="overflow-x-auto pb-2"
+        onScroll={(e) => setScrolled(e.currentTarget.scrollLeft > 0)}
+      >
+        <table className="w-full border-separate border-spacing-0 text-[13px]">
           <thead>
-            <tr className="border-b border-slate-200/60">
-              <th className="px-3 py-3 text-center uppercase tracking-wider text-slate-400 font-medium w-16">
-                Active
-              </th>
-              <th className="px-3 py-3 text-left uppercase tracking-wider text-slate-400 font-medium">
+            <tr>
+              <th className={`${pinOn} pl-5 pr-2 py-3 text-left align-bottom text-[11.5px] font-medium text-ink-2 sm:pl-6`}>On</th>
+              <th className={`${pinned} px-3 py-3 text-left align-bottom text-[11.5px] font-medium text-ink-2`}>
                 Market
               </th>
+              <th className={`${headerCell} min-w-[150px]`}>% Split</th>
+              <th className={headerCell}>Budget ({currency})</th>
+              <th className={headerCell}>Weighted score</th>
               {metrics.map((metric) => (
                 <th key={metric.key} className={headerCell}>
                   <span className="inline-flex items-center gap-1">
@@ -66,75 +101,58 @@ export default function BudgetTable({
                   </span>
                 </th>
               ))}
-              <th className={headerCell}>Weighted Score</th>
-              <th className={headerCell}>% Split</th>
-              <th className={headerCell}>Budget ({currency})</th>
             </tr>
           </thead>
           <tbody>
-            {sorted.map((row, index) => {
+            {sorted.map((row) => {
               const off = !row.enabled;
-              const cellTone = off ? 'text-slate-400' : 'text-slate-600';
-              const numericCell = `px-3 py-2.5 text-right tabular-nums ${cellTone}`;
+              const cell = 'border-t border-black/[0.05] px-3 py-2.5';
+              const numericCell = `${cell} num text-right whitespace-nowrap last:pr-6 ${off ? 'text-ink-3' : 'text-ink'}`;
               return (
                 <tr
                   key={row.market.name}
-                  className={`border-b border-slate-100/40 transition-colors hover:bg-slate-50/50 ${
-                    off
-                      ? 'bg-slate-50/40 opacity-60'
-                      : index % 2 === 0
-                      ? 'bg-white/30'
-                      : 'bg-slate-50/20'
-                  }`}
+                  className="transition-opacity duration-300 hover:[&>td]:bg-black/[0.02]"
+                  style={{ opacity: off ? 0.55 : 1 }}
                 >
-                  <td className="px-3 py-2.5 text-center">
-                    <button
-                      onClick={() => onToggleMarket(row.market.name)}
-                      className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors duration-200 ${
-                        row.enabled ? 'bg-blue-500' : 'bg-slate-300'
-                      }`}
-                      aria-label={`Toggle ${row.market.name}`}
-                    >
-                      <span
-                        className={`inline-block h-3.5 w-3.5 rounded-full bg-white shadow-sm transition-transform duration-200 ${
-                          row.enabled ? 'translate-x-5' : 'translate-x-0.5'
-                        }`}
-                      />
-                    </button>
+                  <td className={`${cell} ${pinOn} pl-5 pr-2 sm:pl-6`}>
+                    <Switch
+                      size="sm"
+                      checked={row.enabled}
+                      onChange={() => onToggleMarket(row.market.name)}
+                      label={`Include ${row.market.name}`}
+                    />
                   </td>
-                  <td
-                    className={`px-3 py-2.5 font-medium ${
-                      off ? 'text-slate-500' : 'text-slate-700'
-                    }`}
-                  >
-                    {row.market.name}
+                  <td className={`${cell} ${pinned}`}>
+                    <span className="flex items-center gap-2.5">
+                      <Flag iso2={row.market.iso2} name={row.market.name} size="sm" />
+                      <span className="whitespace-nowrap font-medium text-ink">{row.market.name}</span>
+                    </span>
+                  </td>
+                  <td className={`${cell} text-right`}>
+                    <span className="flex items-center justify-end gap-3">
+                      <ShareBar value={row.enabled ? relativeShare(row.split, maxSplit) : 0} className="w-20" />
+                      <span className={`num w-12 text-right font-medium ${off ? 'text-ink-3' : 'text-ink'}`}>
+                        {row.enabled ? <AnimatedNumber value={row.split} format={fmtPct} /> : '—'}
+                      </span>
+                    </span>
+                  </td>
+                  <td className={`${numericCell} font-semibold`}>
+                    {row.enabled ? <AnimatedNumber value={row.budget} format={fmtBudget} /> : '—'}
+                  </td>
+                  <td className={numericCell}>
+                    {row.enabled ? <AnimatedNumber value={row.score} format={fmtScore} /> : '—'}
                   </td>
                   {metrics.map((metric) => (
-                    <td key={metric.key} className={numericCell}>
+                    <td key={metric.key} className={`${numericCell} ${off ? '' : 'text-ink-2'}`}>
                       {fmt(row.market.values[metric.key] ?? null)}
                     </td>
                   ))}
-                  <td className={numericCell}>
-                    {row.enabled ? row.score.toFixed(2) : '—'}
-                  </td>
-                  <td className={numericCell}>
-                    {row.enabled ? `${(row.split * 100).toFixed(1)}%` : '—'}
-                  </td>
-                  <td
-                    className={`px-3 py-2.5 text-right font-semibold tabular-nums ${
-                      off ? 'text-slate-400' : 'text-slate-700'
-                    }`}
-                  >
-                    {row.enabled
-                      ? `${currency} ${Math.round(row.budget).toLocaleString()}`
-                      : '—'}
-                  </td>
                 </tr>
               );
             })}
           </tbody>
         </table>
       </div>
-    </div>
+    </section>
   );
 }

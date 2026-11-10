@@ -33,10 +33,18 @@ function geoToIso2(geo: { id?: string | number; properties?: Record<string, unkn
   return byA3 ? byA3.alpha2.toLowerCase() : null;
 }
 
-const TARGET_FILL = '#93c5fd'; // blue-300
-const TARGET_HOVER = '#60a5fa'; // blue-400
-const DEFAULT_FILL = '#e2e8f0'; // slate-200
-const DEFAULT_HOVER = '#cbd5e1'; // slate-300
+import {
+  NEUTRAL_LAND,
+  NEUTRAL_LAND_HOVER,
+  RAMP,
+  rampColor,
+  toneScale,
+  formatMoney,
+} from '@/lib/ui/theme';
+
+/** Target market with no budget (toggled off by default). */
+const UNFUNDED_FILL = '#d6e4f5';
+const UNFUNDED_HOVER = '#c3d6ee';
 
 interface WorldMapProps {
   markets: MarketVm[];
@@ -50,6 +58,7 @@ interface MemoizedGeographyProps {
   fill: string;
   hoverFill: string;
   tooltipContent: string;
+  interactive: boolean;
   onClick: () => void;
 }
 
@@ -58,6 +67,7 @@ const MemoizedGeography = memo(function MemoizedGeography({
   fill,
   hoverFill,
   tooltipContent,
+  interactive,
   onClick,
 }: MemoizedGeographyProps) {
   const [isHovered, setIsHovered] = useState(false);
@@ -66,16 +76,17 @@ const MemoizedGeography = memo(function MemoizedGeography({
     <Geography
       geography={geo}
       fill={isHovered ? hoverFill : fill}
-      stroke="#fff"
-      strokeWidth={0.5}
+      stroke="rgba(255,255,255,0.9)"
+      strokeWidth={0.6}
+      className="map-geo"
       onClick={onClick}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       data-tooltip-id="map-tooltip"
       data-tooltip-content={tooltipContent}
       style={{
-        default: { outline: 'none' },
-        hover: { outline: 'none', cursor: 'pointer' },
+        default: { outline: 'none', transition: 'fill 320ms ease' },
+        hover: { outline: 'none', cursor: interactive ? 'pointer' : 'default', transition: 'fill 120ms ease' },
         pressed: { outline: 'none' },
       }}
     />
@@ -101,10 +112,16 @@ export default function WorldMap({
     [allocations]
   );
 
+  const tone = useMemo(
+    () => toneScale(allocations.filter((a) => a.budget > 0).map((a) => a.split)),
+    [allocations]
+  );
+
   const buildTooltipContent = useCallback(
     (market: MarketVm): string => {
-      const budget = allocationByName.get(market.name)?.budget ?? 0;
-      return `${market.name} | Budget: ${currency} ${Math.round(budget).toLocaleString()}`;
+      const alloc = allocationByName.get(market.name);
+      if (!alloc || alloc.budget <= 0) return `${market.name} · not funded`;
+      return `${market.name} · ${(alloc.split * 100).toFixed(1)}% · ${formatMoney(currency, alloc.budget)}`;
     },
     [allocationByName, currency]
   );
@@ -119,10 +136,12 @@ export default function WorldMap({
 
   return (
     <div className="relative">
-      <div className="w-full" style={{ height: 500 }}>
+      <div className="w-full overflow-hidden rounded-[14px]" style={{ aspectRatio: '16 / 9.5' }}>
         <ComposableMap
           projection="geoMercator"
-          projectionConfig={{ scale: 115, center: [15, 20] }}
+          projectionConfig={{ scale: 118, center: [15, 24] }}
+          width={800}
+          height={475}
           style={{ width: '100%', height: '100%' }}
         >
           <ZoomableGroup>
@@ -131,14 +150,20 @@ export default function WorldMap({
                 geographies.map((geo: GeoFeature) => {
                   const iso2 = geoToIso2(geo);
                   const market = iso2 ? marketByIso2.get(iso2) : undefined;
-
-                  let fill = DEFAULT_FILL;
-                  let hoverFill = DEFAULT_HOVER;
+                  let fill = NEUTRAL_LAND;
+                  let hoverFill = NEUTRAL_LAND_HOVER;
                   let tooltipContent = (geo.properties?.name as string | undefined) ?? '';
 
                   if (market) {
-                    fill = TARGET_FILL;
-                    hoverFill = TARGET_HOVER;
+                    const alloc = allocationByName.get(market.name);
+                    if (alloc && alloc.budget > 0) {
+                      const t = tone(alloc.split);
+                      fill = rampColor(0.1 + 0.9 * t);
+                      hoverFill = rampColor(Math.min(1, 0.25 + 0.9 * t));
+                    } else {
+                      fill = UNFUNDED_FILL;
+                      hoverFill = UNFUNDED_HOVER;
+                    }
                     tooltipContent = buildTooltipContent(market);
                   }
 
@@ -149,6 +174,7 @@ export default function WorldMap({
                       fill={fill}
                       hoverFill={hoverFill}
                       tooltipContent={tooltipContent}
+                      interactive={Boolean(market)}
                       onClick={() => handleGeoClick(iso2)}
                     />
                   );
@@ -159,34 +185,28 @@ export default function WorldMap({
         </ComposableMap>
       </div>
 
-      <Tooltip
-        id="map-tooltip"
-        style={{
-          backgroundColor: 'rgba(15, 23, 42, 0.92)',
-          color: '#f1f5f9',
-          borderRadius: '8px',
-          padding: '8px 12px',
-          fontSize: '13px',
-          fontFamily: 'inherit',
-          zIndex: 50,
-        }}
-      />
+      <Tooltip id="map-tooltip" className="tip" opacity={1} noArrow offset={10} float />
 
-      {/* Legend */}
-      <div className="flex items-center justify-center gap-6 mt-3 pb-1">
-        <div className="flex items-center gap-2">
+      {/* Legend: one ramp, one meaning */}
+      <div className="mt-2 flex flex-wrap items-center justify-between gap-3 px-1 pb-0.5">
+        <div className="flex items-center gap-2.5">
+          <span className="text-xs text-ink-2">Smaller share</span>
           <span
-            className="inline-block w-3 h-3 rounded-full"
-            style={{ backgroundColor: TARGET_FILL }}
+            aria-hidden
+            className="h-2 w-28 rounded-full"
+            style={{ background: `linear-gradient(90deg, ${RAMP.join(', ')})` }}
           />
-          <span className="text-xs text-slate-500 font-medium">Target Markets</span>
+          <span className="text-xs text-ink-2">Larger share</span>
         </div>
-        <div className="flex items-center gap-2">
-          <span
-            className="inline-block w-3 h-3 rounded-full"
-            style={{ backgroundColor: DEFAULT_FILL }}
-          />
-          <span className="text-xs text-slate-500 font-medium">Other</span>
+        <div className="flex items-center gap-4">
+          <span className="flex items-center gap-1.5 text-xs text-ink-2">
+            <span aria-hidden className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: UNFUNDED_FILL }} />
+            Not funded
+          </span>
+          <span className="flex items-center gap-1.5 text-xs text-ink-2">
+            <span aria-hidden className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: NEUTRAL_LAND }} />
+            Other
+          </span>
         </div>
       </div>
     </div>

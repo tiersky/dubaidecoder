@@ -1,135 +1,482 @@
 @import "tailwindcss";
 
+/* ── Tokens ─────────────────────────────────────────────────────────────
+   Light material world: neutral ink, one accent (system blue), and a single
+   blue sequential ramp for budget magnitude (see lib/ui/theme.ts). */
+
 @theme inline {
-  --color-background: #f8fafc;
-  --color-foreground: #0f172a;
-  --font-sans: var(--font-outfit);
+  --color-background: #eef1f6;
+  --color-foreground: #1d1d1f;
+  --color-ink: #1d1d1f;
+  --color-ink-2: #5f5f66;      /* secondary text, 5.9:1 on white */
+  --color-ink-3: #86868b;      /* tertiary, large/decorative only */
+  --color-accent: #0071e3;     /* 4.7:1 on white */
+  --color-accent-strong: #0060c0;
+  --color-positive: #34c759;
+  --color-hairline: rgba(0, 0, 0, 0.08);
+
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", var(--font-inter), "Segoe UI", system-ui, sans-serif;
+  --font-display: -apple-system, BlinkMacSystemFont, "SF Pro Display", var(--font-inter), "Segoe UI", system-ui, sans-serif;
+}
+
+:root {
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+  /* Critically-damped-feeling glide for the segmented thumb. */
+  --ease-glide: cubic-bezier(0.25, 1, 0.3, 1);
+
+  --radius-panel: 22px;
+  --radius-card: 20px;
+  --radius-control: 12px;
+
+  color-scheme: light;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
 }
 
 body {
-  font-family: var(--font-sans), system-ui, sans-serif;
-  min-height: 100vh;
-  color: var(--color-foreground);
-  /* Tinted backdrop the glass surfaces need to read as cards — on plain
-     white, the translucent white cards/inputs were nearly invisible. */
+  font-family: var(--font-sans);
+  min-height: 100dvh;
+  color: var(--color-ink);
+  letter-spacing: -0.006em;
+  /* The colour fields only exist so the glass has something to refract.
+     They are static: no looping motion behind working content. */
   background:
-    radial-gradient(1200px 800px at 85% -10%, rgba(99, 102, 241, 0.14), transparent 60%),
-    radial-gradient(1000px 700px at -10% 30%, rgba(56, 189, 248, 0.12), transparent 55%),
-    linear-gradient(160deg, #eef2f7 0%, #e6ebf4 100%);
+    radial-gradient(900px 640px at 92% -8%, rgba(0, 122, 255, 0.2), transparent 62%),
+    radial-gradient(760px 620px at -6% 24%, rgba(48, 176, 199, 0.18), transparent 60%),
+    radial-gradient(820px 560px at 62% 112%, rgba(255, 159, 10, 0.12), transparent 62%),
+    radial-gradient(600px 480px at 30% 70%, rgba(175, 82, 222, 0.07), transparent 60%),
+    linear-gradient(180deg, #f3f5f9 0%, #e9edf3 100%);
   background-attachment: fixed;
 }
 
-/* ── Glassmorphism Surfaces ────────────────────────────── */
+::selection {
+  background: rgba(0, 113, 227, 0.2);
+  color: inherit;
+}
 
-.glass {
-  background: rgba(255, 255, 255, 0.6);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
-  border: 1px solid rgba(15, 23, 42, 0.08);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.06);
+input,
+textarea {
+  caret-color: var(--color-accent);
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+.num {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+.display {
+  font-family: var(--font-display);
+  letter-spacing: -0.024em;
+  line-height: 1.08;
+  text-wrap: balance;
+}
+
+/* ── Materials ──────────────────────────────────────────────────────────
+   Thicker surfaces (panels, chrome) get stronger blur and a deeper shadow
+   than content cards. Each carries a bright specular top edge and a 0.5px
+   hairline so it holds its edge on a projector. */
+
+.glass,
+.glass-sidebar,
+.glass-header {
+  background: rgba(255, 255, 255, 0.62);
+  backdrop-filter: blur(30px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.72);
+  box-shadow:
+    0 0 0 0.5px rgba(0, 0, 0, 0.07),
+    0 1px 2px rgba(15, 23, 42, 0.04),
+    0 16px 40px -12px rgba(15, 23, 42, 0.16),
+    inset 0 1px 0 rgba(255, 255, 255, 0.95);
 }
 
 .glass-card {
-  background: rgba(255, 255, 255, 0.52);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(15, 23, 42, 0.08);
+  background: rgba(255, 255, 255, 0.58);
+  backdrop-filter: blur(24px) saturate(170%);
+  border: 1px solid rgba(255, 255, 255, 0.7);
   box-shadow:
-    0 8px 32px rgba(0, 0, 0, 0.04),
-    inset 0 1px 0 rgba(255, 255, 255, 0.6);
-  border-radius: 1.25rem;
+    0 0 0 0.5px rgba(0, 0, 0, 0.06),
+    0 1px 2px rgba(15, 23, 42, 0.03),
+    0 10px 30px -12px rgba(15, 23, 42, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  border-radius: var(--radius-card);
+}
+
+/* Floating over working content (mobile sheet): heavier material. */
+.glass-solid {
+  background: rgba(250, 250, 252, 0.86);
+}
+
+/* Inset well: a recessed area inside a card. Never a second glass layer. */
+.well {
+  background: rgba(0, 0, 0, 0.035);
+  border-radius: 14px;
 }
 
 .glass-card-hover {
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition:
+    transform 220ms var(--ease-out),
+    box-shadow 220ms var(--ease-out),
+    background-color 220ms ease;
 }
-.glass-card-hover:hover {
-  background: rgba(255, 255, 255, 0.72);
-  box-shadow:
-    0 12px 40px rgba(0, 0, 0, 0.07),
-    inset 0 1px 0 rgba(255, 255, 255, 0.8);
-  transform: translateY(-2px);
+@media (hover: hover) and (pointer: fine) {
+  .glass-card-hover:hover {
+    background-color: rgba(255, 255, 255, 0.74);
+    box-shadow:
+      0 0 0 0.5px rgba(0, 0, 0, 0.07),
+      0 2px 4px rgba(15, 23, 42, 0.04),
+      0 18px 40px -14px rgba(15, 23, 42, 0.18),
+      inset 0 1px 0 rgba(255, 255, 255, 1);
+    transform: translateY(-1px);
+  }
 }
-
-.glass-sidebar {
-  background: rgba(255, 255, 255, 0.68);
-  backdrop-filter: blur(40px);
-  -webkit-backdrop-filter: blur(40px);
-  border-right: 1px solid rgba(255, 255, 255, 0.5);
-}
-
-.glass-header {
-  background: rgba(255, 255, 255, 0.6);
-  backdrop-filter: blur(32px);
-  -webkit-backdrop-filter: blur(32px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.5);
-  box-shadow: 0 1px 12px rgba(0, 0, 0, 0.03);
+.glass-card-hover:active {
+  transform: scale(0.985);
+  transition-duration: 120ms;
 }
 
 .glass-input {
-  background: rgba(255, 255, 255, 0.75);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(15, 23, 42, 0.15);
-  transition: all 0.2s ease;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.03);
+  transition:
+    border-color 160ms ease,
+    box-shadow 200ms var(--ease-out),
+    background-color 160ms ease;
+}
+.glass-input::placeholder {
+  color: var(--color-ink-2);
+  opacity: 0.8;
 }
 .glass-input:focus {
-  background: rgba(255, 255, 255, 0.7);
-  border-color: rgba(59, 130, 246, 0.4);
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  background: rgba(255, 255, 255, 0.95);
+  border-color: rgba(0, 113, 227, 0.55);
+  box-shadow: 0 0 0 4px rgba(0, 113, 227, 0.16);
   outline: none;
 }
 
-/* ── Scrollbar ─────────────────────────────────────────── */
+/* ── Controls ───────────────────────────────────────────────────────────── */
 
+.press {
+  transition: transform 140ms var(--ease-out);
+}
+.press:active {
+  transform: scale(0.97);
+}
+
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  border-radius: 999px;
+  background: var(--color-accent);
+  color: #fff;
+  font-weight: 590;
+  letter-spacing: -0.01em;
+  box-shadow:
+    0 1px 2px rgba(0, 60, 140, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.22);
+  transition:
+    background-color 160ms ease,
+    transform 140ms var(--ease-out),
+    opacity 160ms ease;
+}
+@media (hover: hover) and (pointer: fine) {
+  .btn-primary:hover {
+    background: var(--color-accent-strong);
+  }
+}
+.btn-primary:active {
+  transform: scale(0.97);
+}
+.btn-primary:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.7);
+  color: var(--color-ink);
+  font-weight: 560;
+  box-shadow:
+    0 0 0 0.5px rgba(0, 0, 0, 0.1),
+    0 1px 2px rgba(0, 0, 0, 0.04);
+  transition:
+    background-color 160ms ease,
+    transform 140ms var(--ease-out);
+}
+@media (hover: hover) and (pointer: fine) {
+  .btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.95);
+  }
+}
+.btn-secondary:active {
+  transform: scale(0.97);
+}
+
+/* Switch: the knob stretches while pressed, like the native control. */
+.switch {
+  --sw-w: 42px;
+  --sw-h: 26px;
+  --sw-pad: 2px;
+  --sw-knob: calc(var(--sw-h) - var(--sw-pad) * 2);
+  position: relative;
+  display: inline-flex;
+  flex-shrink: 0;
+  width: var(--sw-w);
+  height: var(--sw-h);
+  border-radius: 999px;
+  background: rgba(120, 120, 128, 0.22);
+  transition: background-color 220ms ease;
+}
+.switch[data-size="sm"] {
+  --sw-w: 34px;
+  --sw-h: 20px;
+}
+.switch[aria-checked="true"] {
+  background: var(--color-positive);
+}
+.switch-knob {
+  position: absolute;
+  top: var(--sw-pad);
+  left: var(--sw-pad);
+  width: var(--sw-knob);
+  height: var(--sw-knob);
+  border-radius: 999px;
+  background: #fff;
+  box-shadow:
+    0 2px 6px rgba(0, 0, 0, 0.16),
+    0 0 0 0.5px rgba(0, 0, 0, 0.05);
+  transition:
+    transform 260ms var(--ease-out),
+    width 200ms var(--ease-out);
+}
+.switch[aria-checked="true"] .switch-knob {
+  transform: translateX(calc(var(--sw-w) - var(--sw-knob) - var(--sw-pad) * 2));
+}
+.switch:active .switch-knob {
+  width: calc(var(--sw-knob) + 5px);
+}
+.switch[aria-checked="true"]:active .switch-knob {
+  transform: translateX(calc(var(--sw-w) - var(--sw-knob) - 5px - var(--sw-pad) * 2));
+}
+
+/* Segmented control with a sliding glass thumb. */
+.segmented {
+  position: relative;
+  display: inline-flex;
+  padding: 3px;
+  border-radius: 12px;
+  background: rgba(118, 118, 128, 0.12);
+}
+.segmented-thumb {
+  position: absolute;
+  top: 3px;
+  bottom: 3px;
+  left: 0;
+  border-radius: 9px;
+  background: #fff;
+  box-shadow:
+    0 3px 8px rgba(0, 0, 0, 0.1),
+    0 0 0 0.5px rgba(0, 0, 0, 0.05);
+}
+.segmented[data-ready="true"] .segmented-thumb {
+  transition:
+    transform 340ms var(--ease-glide),
+    width 340ms var(--ease-glide);
+}
+.segmented-item {
+  position: relative;
+  z-index: 1;
+  padding: 0.4rem 1rem;
+  border-radius: 9px;
+  font-size: 0.8125rem;
+  font-weight: 560;
+  color: var(--color-ink-2);
+  white-space: nowrap;
+  transition:
+    color 200ms ease,
+    transform 140ms var(--ease-out);
+}
+.segmented-item[aria-selected="true"] {
+  color: var(--color-ink);
+}
+.segmented-item:active {
+  transform: scale(0.97);
+}
+
+/* Share bar: grows from its leading edge (transform only). */
+.share-track {
+  position: relative;
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.06);
+  overflow: hidden;
+}
+.share-fill {
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  transform-origin: left center;
+  transition: transform 520ms var(--ease-out), background-color 300ms ease;
+}
+
+/* ── Scrollbar ─────────────────────────────────────────────────────────── */
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 0, 0, 0.18) transparent;
+}
 ::-webkit-scrollbar {
-  width: 5px;
+  width: 8px;
+  height: 8px;
 }
 ::-webkit-scrollbar-track {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(148, 163, 184, 0.25);
+  background: rgba(0, 0, 0, 0.16);
   border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(148, 163, 184, 0.45);
+  background-color: rgba(0, 0, 0, 0.3);
 }
 
-/* ── Map Tooltip ───────────────────────────────────────── */
+/* ── Tooltips (react-tooltip) ──────────────────────────────────────────── */
 
-.map-tooltip {
-  background: rgba(255, 255, 255, 0.92) !important;
-  backdrop-filter: blur(16px) !important;
-  border: 1px solid rgba(255, 255, 255, 0.7) !important;
-  border-radius: 14px !important;
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.1) !important;
-  padding: 14px 18px !important;
-  color: #0f172a !important;
-  font-family: var(--font-sans), system-ui, sans-serif !important;
-  pointer-events: none;
+.tip {
+  background: rgba(29, 29, 31, 0.86) !important;
+  backdrop-filter: blur(20px) saturate(160%);
+  color: #f5f5f7 !important;
+  border-radius: 10px !important;
+  padding: 8px 12px !important;
+  font-size: 12px !important;
+  line-height: 1.45 !important;
+  box-shadow: 0 10px 30px -8px rgba(0, 0, 0, 0.35) !important;
+  font-family: var(--font-sans) !important;
+  z-index: 60 !important;
 }
 
-/* ── Animations ────────────────────────────────────────── */
+/* ── Motion ─────────────────────────────────────────────────────────────
+   One grammar: surfaces *materialize* (blur + scale + fade) when a view
+   changes, and lists stagger by 40ms. `backwards` fill keeps content
+   visible by default if animation never runs. */
 
-@keyframes fade-in-up {
+@keyframes materialize {
   from {
     opacity: 0;
-    transform: translateY(12px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
+    transform: translateY(8px) scale(0.985);
+    filter: blur(6px);
   }
 }
 
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes sheet-in {
+  from {
+    transform: translateX(-104%);
+  }
+}
+
+.materialize {
+  animation: materialize 460ms var(--ease-out) backwards;
+  animation-delay: calc(var(--i, 0) * 45ms);
+}
+
+/* Legacy names kept for admin pages. */
 .animate-fade-in-up {
-  animation: fade-in-up 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  animation: materialize 460ms var(--ease-out) backwards;
+}
+.animate-delay-1 { animation-delay: 45ms; }
+.animate-delay-2 { animation-delay: 90ms; }
+.animate-delay-3 { animation-delay: 135ms; }
+.animate-delay-4 { animation-delay: 180ms; }
+.animate-delay-5 { animation-delay: 225ms; }
+.animate-delay-6 { animation-delay: 270ms; }
+
+.scrim {
+  animation: fade-in 240ms ease backwards;
+}
+.sheet {
+  animation: sheet-in 380ms var(--ease-drawer) backwards;
 }
 
-.animate-delay-1 { animation-delay: 0.05s; }
-.animate-delay-2 { animation-delay: 0.1s; }
-.animate-delay-3 { animation-delay: 0.15s; }
-.animate-delay-4 { animation-delay: 0.2s; }
-.animate-delay-5 { animation-delay: 0.25s; }
-.animate-delay-6 { animation-delay: 0.3s; }
+@media (prefers-reduced-motion: reduce) {
+  .materialize,
+  .animate-fade-in-up {
+    animation: fade-in 200ms ease backwards;
+    animation-delay: 0ms;
+  }
+  .sheet {
+    animation: fade-in 200ms ease backwards;
+  }
+  .segmented[data-ready="true"] .segmented-thumb,
+  .share-fill,
+  .switch-knob,
+  .glass-card-hover,
+  .press,
+  .btn-primary,
+  .btn-secondary {
+    transition-property: opacity, background-color, color;
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .glass,
+  .glass-sidebar,
+  .glass-header,
+  .glass-card {
+    background: #fbfbfd;
+    backdrop-filter: none;
+  }
+}
+
+@media (prefers-contrast: more) {
+  .glass,
+  .glass-card,
+  .glass-input {
+    background: #fff;
+    border-color: rgba(0, 0, 0, 0.45);
+  }
+}
+
+.map-geo {
+  animation: fade-in 600ms ease backwards;
+}
+
+/* Loading placeholder: constant motion, so linear. */
+@keyframes shimmer {
+  from { background-position: 150% 0; }
+  to { background-position: -50% 0; }
+}
+.shimmer {
+  background: linear-gradient(90deg, rgba(0, 0, 0, 0.05) 30%, rgba(0, 0, 0, 0.09) 50%, rgba(0, 0, 0, 0.05) 70%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s linear infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .shimmer { animation: none; }
+}

@@ -161,11 +161,20 @@ export async function deleteDraftAction(formData: FormData): Promise<void> {
   redirect('/admin');
 }
 
+/** Absent fields stay untouched; present-but-empty clears. */
+function contextFromForm(formData: FormData): { industry?: string; brief?: string } | undefined {
+  const industry = formData.get('industry');
+  const brief = formData.get('brief');
+  if (industry === null && brief === null) return undefined;
+  return { industry: String(industry ?? ''), brief: String(brief ?? '') };
+}
+
 function editsFromForm(formData: FormData, config: VersionConfig): DraftEdits {
   const edits: DraftEdits = {
     name: String(formData.get('name') ?? '') || undefined,
     currency: String(formData.get('currency') ?? '') || undefined,
     defaultBudget: Number(formData.get('defaultBudget')) || undefined,
+    context: contextFromForm(formData),
     weights: {},
     directions: {},
     labels: {},
@@ -283,6 +292,7 @@ export async function applyTweaksAction(
   const tweaks: TweakInput = {
     defaultBudget: Number(formData.get('defaultBudget')) || undefined,
     currency: String(formData.get('currency') ?? '') || undefined,
+    context: contextFromForm(formData),
     weights: Object.fromEntries(
       config.metrics.map((m) => {
         // '' is not null/undefined, so a plain `?? m.weight` fallback never

@@ -5,6 +5,7 @@ import { DashboardVm, computeAllocations } from '@/lib/dashboard/derive';
 import GlassCard from '@/components/atoms/GlassCard';
 import SelectDropdown from '@/components/atoms/SelectDropdown';
 import BudgetInputField from '@/components/molecules/BudgetInputField';
+import ChartCard from '@/components/molecules/ChartCard';
 import BubbleChart from '@/components/organisms/BubbleChart';
 import BudgetTreemap from '@/components/organisms/BudgetTreemap';
 import ModelWeightsPanel from '@/components/organisms/ModelWeightsPanel';
@@ -48,44 +49,24 @@ export default function BudgetAllocation({ vm }: BudgetAllocationProps) {
   );
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h2 className="text-2xl font-bold text-slate-900 tracking-tight">
-          Budget Allocation
-        </h2>
-        <p className="text-sm text-slate-400 mt-1">
-          Interactive market analysis and budget optimization
-        </p>
+    <div className="space-y-5">
+      <div className="px-1">
+        <h1 className="display text-[28px] font-semibold text-ink sm:text-[32px]">Budget Allocation</h1>
+        <p className="mt-1.5 text-[14px] text-ink-2">Interactive market analysis and budget optimization</p>
       </div>
 
-      {/* Bubble Chart Section */}
-      <GlassCard>
-        <h3 className="text-sm font-semibold text-slate-800 mb-4">
-          Market Analysis Bubble Chart
-        </h3>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          <SelectDropdown
-            label="X-Axis"
-            options={vm.axisOptions}
-            value={xAxis}
-            onChange={setXAxis}
-          />
-          <SelectDropdown
-            label="Y-Axis"
-            options={vm.axisOptions}
-            value={yAxis}
-            onChange={setYAxis}
-          />
-          <SelectDropdown
-            label="Bubble Size"
-            options={vm.bubbleOptions}
-            value={bubbleSize}
-            onChange={setBubbleSize}
-          />
-        </div>
-
+      <ChartCard
+        title="Market analysis"
+        subtitle="Compare active markets on any two indicators"
+        height="h-[440px]"
+        actions={
+          <div className="grid w-full grid-cols-1 gap-3 sm:w-auto sm:grid-cols-3">
+            <SelectDropdown label="X-axis" options={vm.axisOptions} value={xAxis} onChange={setXAxis} />
+            <SelectDropdown label="Y-axis" options={vm.axisOptions} value={yAxis} onChange={setYAxis} />
+            <SelectDropdown label="Bubble size" options={vm.bubbleOptions} value={bubbleSize} onChange={setBubbleSize} />
+          </div>
+        }
+      >
         <BubbleChart
           markets={enabledMarkets}
           metrics={vm.metrics}
@@ -95,34 +76,28 @@ export default function BudgetAllocation({ vm }: BudgetAllocationProps) {
           bubbleSize={bubbleSize}
           currency={vm.currency}
         />
-      </GlassCard>
+      </ChartCard>
 
-      {/* Budget Calculator + Model Weights + Treemap */}
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 items-stretch">
-        <div className="flex flex-col gap-6">
-          <GlassCard>
-            <h3 className="text-sm font-semibold text-slate-800 mb-2">
-              Budget Allocation Calculator
-            </h3>
-            <p className="text-xs text-slate-400 mb-4">
-              {enabledMarkets.length} active{' '}
-              {enabledMarkets.length === 1 ? 'market' : 'markets'} • toggle
-              markets below to reallocate
-            </p>
+      <div className="grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
+        <div className="flex flex-col gap-5">
+          <GlassCard padding="p-5 sm:p-6">
+            <div className="mb-4 flex items-baseline justify-between gap-4">
+              <h2 className="text-[15px] font-semibold text-ink">Budget calculator</h2>
+              <span className="text-xs text-ink-2">
+                <span className="num">{enabledMarkets.length}</span> active{' '}
+                {enabledMarkets.length === 1 ? 'market' : 'markets'}
+              </span>
+            </div>
+            <BudgetInputField value={totalBudget} onChange={setTotalBudget} currency={vm.currency} />
             {vm.allocation && (
-              <p className="text-xs text-slate-500 mb-4">
-                This version uses a fixed budget split. Model weights change the
-                scores, not the budget.
+              <p className="mt-3 rounded-[10px] bg-accent/[0.07] px-3 py-2 text-xs text-ink">
+                This version uses a fixed budget split. Model weights change the scores, not the budget.
               </p>
             )}
-            <BudgetInputField
-              value={totalBudget}
-              onChange={setTotalBudget}
-              currency={vm.currency}
-            />
           </GlassCard>
 
           <ModelWeightsPanel
+            className="flex-1"
             metrics={vm.metrics}
             weights={weights}
             onChange={setWeights}
@@ -135,10 +110,10 @@ export default function BudgetAllocation({ vm }: BudgetAllocationProps) {
             }}
           />
         </div>
+
         <BudgetTreemap allocations={allocations} currency={vm.currency} />
       </div>
 
-      {/* Budget Table */}
       <BudgetTable
         markets={vm.markets}
         metrics={vm.metrics}
@@ -148,6 +123,7 @@ export default function BudgetAllocation({ vm }: BudgetAllocationProps) {
         enabledNames={enabledNames}
         onToggleMarket={toggleMarket}
       />
+
     </div>
   );
 }

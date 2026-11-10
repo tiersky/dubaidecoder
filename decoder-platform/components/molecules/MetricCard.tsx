@@ -1,39 +1,31 @@
-import GlassCard from "@/components/atoms/GlassCard";
-import MetricValue from "@/components/atoms/MetricValue";
 import MetricInfo from "@/components/atoms/MetricInfo";
+import ShareBar from "@/components/atoms/ShareBar";
 
 interface MetricCardProps {
   value: string | number;
   label: string;
-  sublabel?: string;
-  color?: string;
-  icon?: React.ReactNode;
+  index?: number;
   metric?: { label: string; source?: string; description?: string };
+  peer?: { fraction: number; caption: string } | null;
 }
 
-export default function MetricCard({
-  value,
-  label,
-  sublabel,
-  color,
-  icon,
-  metric,
-}: MetricCardProps) {
+export default function MetricCard({ value, label, index = 0, metric, peer }: MetricCardProps) {
   return (
-    <GlassCard hover>
-      <div className="flex items-start justify-between">
-        <div className="flex-1 min-w-0">
-          <MetricValue value={value} label={label} sublabel={sublabel} color={color} />
-        </div>
-        <div className="flex items-center gap-1.5 flex-shrink-0">
-          {metric && <MetricInfo metric={metric} label={label} />}
-          {icon && (
-            <div className="p-2 rounded-xl bg-slate-50/80 text-slate-400">
-              {icon}
-            </div>
-          )}
-        </div>
+    <div
+      className="glass-card materialize flex min-h-[132px] flex-col p-5"
+      style={{ ["--i" as string]: Math.min(index, 10) + 1 }}
+    >
+      <div className="flex items-start justify-between gap-2">
+        <p className="text-[13px] font-medium leading-snug text-ink-2">{label}</p>
+        {metric && <MetricInfo metric={metric} label={label} />}
       </div>
-    </GlassCard>
+      <p className="num display mt-2 text-[26px] font-semibold text-ink">{value}</p>
+      {peer && (
+        <div className="mt-auto pt-3">
+          <ShareBar value={peer.fraction} tone={0.5} />
+          <p className="mt-1.5 text-[11.5px] text-ink-2">{peer.caption}</p>
+        </div>
+      )}
+    </div>
   );
 }

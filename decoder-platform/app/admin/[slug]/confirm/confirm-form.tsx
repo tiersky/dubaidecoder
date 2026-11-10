@@ -1,6 +1,7 @@
 'use client';
 
 import { useActionState, useState } from 'react';
+import ContextFields from '@/components/admin/ContextFields';
 import Link from 'next/link';
 import type { DraftRecord } from '@/lib/versions/store';
 import type { VerificationCheck } from '@/lib/parser/verify';
@@ -93,6 +94,7 @@ export function ConfirmForm({ draft }: { draft: DraftRecord }) {
               className="glass-input mt-1 w-full rounded-lg px-3 py-2 text-sm text-slate-800"
             />
           </div>
+          <ContextFields context={config.context} />
         </div>
       </div>
 

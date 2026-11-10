@@ -3,3 +3,7 @@ node_modules/
 ~$*
 *.tsbuildinfo
 .superpowers/
+
+# Local secrets
+.env
+.env*.local

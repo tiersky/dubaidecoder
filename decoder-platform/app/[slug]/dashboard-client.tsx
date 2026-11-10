@@ -10,16 +10,18 @@ import BudgetAllocation from '@/components/templates/BudgetAllocation';
 
 type TabId = 'global' | 'budget';
 
-const TABS: Array<{ id: TabId; label: string }> = [
-  { id: 'global', label: 'Global Overview' },
-  { id: 'budget', label: 'Budget Allocation' },
+const TABS: Array<{ id: TabId; label: string; shortLabel: string }> = [
+  { id: 'global', label: 'Global Overview', shortLabel: 'Overview' },
+  { id: 'budget', label: 'Budget Allocation', shortLabel: 'Budget' },
 ];
 
 interface DashboardClientProps {
   vm: DashboardVm;
+  /** AI market analysis on country pages. Off for unpublished draft previews. */
+  ai?: { canRegenerate: boolean };
 }
 
-export default function DashboardClient({ vm }: DashboardClientProps) {
+export default function DashboardClient({ vm, ai }: DashboardClientProps) {
   const [currentTab, setCurrentTab] = useState<TabId>('global');
   const [selectedMarketName, setSelectedMarketName] = useState<string | null>(null);
 
@@ -72,9 +74,15 @@ export default function DashboardClient({ vm }: DashboardClientProps) {
       tabs={TABS}
       currentTab={currentTab}
       onTabChange={handleTabChange}
-      sidebar={
-        <Sidebar markets={vm.markets} selected={selectedMarketName} onSelect={selectMarket} />
-      }
+      viewKey={`${currentTab}:${currentTab === 'global' ? (selectedMarket?.name ?? '') : ''}`}
+      sidebar={(close) => (
+        <Sidebar
+          markets={vm.markets}
+          selected={currentTab === 'global' ? selectedMarketName : null}
+          onSelect={selectMarket}
+          onNavigate={close}
+        />
+      )}
     >
       {currentTab === 'global' && !selectedMarket && (
         <GlobalOverview
@@ -89,7 +97,13 @@ export default function DashboardClient({ vm }: DashboardClientProps) {
         <CountryDetail
           key={selectedMarket.name}
           market={selectedMarket}
+          markets={vm.markets}
           metrics={vm.metrics}
+          allocations={overviewAllocations}
+          currency={vm.currency}
+          slug={vm.slug}
+          industry={vm.industry ?? null}
+          ai={ai}
           onBack={handleBack}
         />
       )}

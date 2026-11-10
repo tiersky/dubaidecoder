@@ -12,28 +12,35 @@ interface SelectDropdownProps {
   onChange: (value: string) => void;
 }
 
-export default function SelectDropdown({
-  label,
-  options,
-  value,
-  onChange,
-}: SelectDropdownProps) {
+export default function SelectDropdown({ label, options, value, onChange }: SelectDropdownProps) {
   return (
-    <div>
-      <label className="block text-xs font-medium uppercase tracking-wider text-slate-400 mb-2">
-        {label}
-      </label>
-      <select
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="glass-input w-full px-3.5 py-2.5 rounded-xl text-sm text-slate-700 appearance-none bg-[url('data:image/svg+xml;charset=UTF-8,%3csvg%20xmlns%3d%22http%3a%2f%2fwww.w3.org%2f2000%2fsvg%22%20width%3d%2212%22%20height%3d%2212%22%20viewBox%3d%220%200%2012%2012%22%3e%3cpath%20fill%3d%22%2394a3b8%22%20d%3d%22M2%204l4%204%204-4%22%2f%3e%3c%2fsvg%3e')] bg-[position:right_12px_center] bg-no-repeat pr-9"
-      >
-        {options.map((opt) => (
-          <option key={opt.value} value={opt.value}>
-            {opt.label}
-          </option>
-        ))}
-      </select>
-    </div>
+    <label className="block">
+      <span className="mb-1.5 block text-xs font-medium text-ink-2">{label}</span>
+      <span className="relative block">
+        <select
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          className="glass-input w-full appearance-none truncate rounded-[var(--radius-control)] py-2 pl-3 pr-9 text-[13px] font-medium text-ink"
+        >
+          {options.map((opt) => (
+            <option key={opt.value} value={opt.value}>
+              {opt.label}
+            </option>
+          ))}
+        </select>
+        <svg
+          aria-hidden
+          className="pointer-events-none absolute right-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-ink-2"
+          viewBox="0 0 16 16"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={1.8}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d="M4.5 6.5L8 3l3.5 3.5M4.5 9.5L8 13l3.5-3.5" />
+        </svg>
+      </span>
+    </label>
   );
 }

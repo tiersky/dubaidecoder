@@ -9,9 +9,9 @@ import {
 } from 'chart.js';
 import ChartDataLabels from 'chartjs-plugin-datalabels';
 import { Bubble } from 'react-chartjs-2';
-import ChartCard from '@/components/molecules/ChartCard';
 import { MarketVm, AllocationRow } from '@/lib/dashboard/derive';
 import { MetricDef } from '@/lib/model/score';
+import { ACCENT, GRID, INK, INK_2, TOOLTIP_CHART, chartFont, formatMoney } from '@/lib/ui/theme';
 
 ChartJS.register(LinearScale, PointElement, Tooltip, Legend, ChartDataLabels);
 
@@ -32,7 +32,7 @@ function axisLabel(key: string, metrics: MetricDef[]): string {
 }
 
 function formatAxisValue(key: string, value: number, currency: string): string {
-  if (key === 'budget') return `${currency} ${Math.round(value).toLocaleString()}`;
+  if (key === 'budget') return formatMoney(currency, value);
   if (key === 'split') return `${(value * 100).toFixed(1)}%`;
   if (key === 'score') return value.toFixed(2);
   return value.toLocaleString();
@@ -85,38 +85,49 @@ export default function BubbleChart({
       name: p.name,
     }));
 
+  const family = chartFont();
+
   const data = {
     datasets: [
       {
         label: 'Markets',
         data: mapPoints(),
-        backgroundColor: 'rgba(59, 130, 246, 0.35)',
-        borderColor: '#3b82f6',
+        backgroundColor: 'rgba(0, 113, 227, 0.18)',
+        hoverBackgroundColor: 'rgba(0, 113, 227, 0.32)',
+        borderColor: ACCENT,
+        hoverBorderColor: ACCENT,
         borderWidth: 1.5,
+        hoverBorderWidth: 2,
       },
     ],
   };
 
+  const axis = (key: string) => ({
+    title: {
+      display: true,
+      text: axisLabel(key, metrics),
+      color: INK_2,
+      font: { family, size: 12, weight: 500 as const },
+      padding: { top: 8 },
+    },
+    grid: { color: GRID, drawTicks: false },
+    ticks: { color: INK_2, font: { family, size: 11 }, padding: 8 },
+    border: { display: false },
+    grace: '8%',
+  });
+
   const options = {
     responsive: true,
     maintainAspectRatio: false,
+    animation: { duration: 650, easing: 'easeOutQuart' as const },
+    layout: { padding: { top: 12, right: 12 } },
     plugins: {
-      legend: {
-        position: 'bottom' as const,
-        labels: {
-          color: '#94a3b8',
-          font: { family: 'Outfit', size: 11 },
-          usePointStyle: true,
-          pointStyle: 'circle',
-          padding: 16,
-        },
-      },
+      // Single series: the card title names it, so no legend box.
+      legend: { display: false },
       tooltip: {
-        backgroundColor: 'rgba(15, 23, 42, 0.9)',
-        titleFont: { family: 'Outfit', size: 12 },
-        bodyFont: { family: 'Outfit', size: 12 },
-        padding: 10,
-        cornerRadius: 8,
+        ...TOOLTIP_CHART,
+        titleFont: { family, size: 12, weight: 600 as const },
+        bodyFont: { family, size: 12 },
         callbacks: {
           title: (items: { dataIndex: number; datasetIndex: number }[]) => {
             if (!items.length) return '';
@@ -132,63 +143,29 @@ export default function BubbleChart({
         },
       },
       datalabels: {
-        color: '#475569',
-        font: {
-          family: 'Outfit',
-          size: 9,
-        },
+        color: INK,
+        font: { family, size: 10.5, weight: 500 as const },
         formatter: (_value: unknown, context: { dataIndex: number; datasetIndex: number }) => {
           const dataset = data.datasets[context.datasetIndex];
           const point = dataset.data[context.dataIndex] as { name: string };
           return point.name;
         },
         align: 'top' as const,
-        offset: 4,
+        anchor: 'end' as const,
+        offset: 2,
+        clamp: true,
       },
     },
-    scales: {
-      x: {
-        title: {
-          display: true,
-          text: axisLabel(xAxis, metrics),
-          color: '#94a3b8',
-          font: { family: 'Outfit', size: 12 },
-        },
-        grid: {
-          color: 'rgba(148, 163, 184, 0.1)',
-        },
-        ticks: {
-          color: '#94a3b8',
-          font: { family: 'Outfit', size: 11 },
-        },
-        border: {
-          display: false,
-        },
-      },
-      y: {
-        title: {
-          display: true,
-          text: axisLabel(yAxis, metrics),
-          color: '#94a3b8',
-          font: { family: 'Outfit', size: 12 },
-        },
-        grid: {
-          color: 'rgba(148, 163, 184, 0.1)',
-        },
-        ticks: {
-          color: '#94a3b8',
-          font: { family: 'Outfit', size: 11 },
-        },
-        border: {
-          display: false,
-        },
-      },
-    },
+    scales: { x: axis(xAxis), y: axis(yAxis) },
   };
 
-  return (
-    <ChartCard title="Market Analysis" height="h-[400px]">
-      <Bubble data={data} options={options} />
-    </ChartCard>
-  );
+  if (points.length === 0) {
+    return (
+      <div className="flex h-full items-center justify-center text-[13px] text-ink-2">
+        No active markets report both indicators. Choose other axes or turn markets on.
+      </div>
+    );
+  }
+
+  return <Bubble data={data} options={options} />;
 }
