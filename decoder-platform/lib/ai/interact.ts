@@ -35,6 +35,18 @@ export function agentChain(env: string | undefined = process.env.INTERACT_AGENTS
   return parsed.length ? parsed : DEFAULT_AGENTS;
 }
 
+/** fetch() wrapper whose network errors name the underlying cause
+ * (ENOTFOUND, ECONNREFUSED, a TLS failure...) instead of a bare "fetch failed". */
+async function request(step: string, url: string, init: RequestInit): Promise<Response> {
+  try {
+    return await fetch(url, init);
+  } catch (err) {
+    const cause = (err as { cause?: { code?: string; message?: string } })?.cause;
+    const why = [cause?.code, cause?.message].filter(Boolean).join(' ') || (err instanceof Error ? err.message : String(err));
+    throw new Error(`Interact ${step} unreachable: ${why}`);
+  }
+}
+
 let cachedToken: { value: string; expiresAt: number } | null = null;
 
 export function resetTokenCache() {
@@ -48,7 +60,7 @@ async function getAccessToken(): Promise<string> {
   const clientSecret = process.env.INTERACT_CLIENT_SECRET;
   if (!clientId || !clientSecret) throw new InteractConfigError('INTERACT_CLIENT_ID / INTERACT_CLIENT_SECRET not set');
 
-  const res = await fetch(AUTH_URL, {
+  const res = await request('token', AUTH_URL, {
     method: 'POST',
     headers: {
       Authorization: `Basic ${Buffer.from(`${clientId}:${clientSecret}`).toString('base64')}`,
@@ -68,7 +80,7 @@ async function getAccessToken(): Promise<string> {
 export class InteractConfigError extends Error {}
 
 async function callAgent(agentId: string, token: string, message: string, signal?: AbortSignal): Promise<string> {
-  const res = await fetch(`${AGENTS_URL}/${agentId}/stream`, {
+  const res = await request('agent', `${AGENTS_URL}/${agentId}/stream`, {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${token}`,
