@@ -28,7 +28,7 @@ async function fetchInsight(
     signal,
   });
   const body = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(body.error || 'Could not load the analysis.');
+  if (!res.ok) throw new Error([body.error || 'Could not load the analysis.', body.detail].filter(Boolean).join(' — '));
   return body as InsightResponse;
 }
 

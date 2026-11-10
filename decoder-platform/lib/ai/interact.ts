@@ -56,7 +56,10 @@ async function getAccessToken(): Promise<string> {
     },
     body: 'grant_type=client_credentials',
   });
-  if (!res.ok) throw new Error(`Interact token request failed: ${res.status}`);
+  if (!res.ok) {
+    const text = await res.text().catch(() => '');
+    throw new Error(`Interact token request failed: ${res.status} ${text.slice(0, 200)}`);
+  }
   const json = (await res.json()) as { access_token: string; expires_in: number };
   cachedToken = { value: json.access_token, expiresAt: now + Math.max(60, json.expires_in - 300) * 1000 };
   return cachedToken.value;
@@ -79,7 +82,10 @@ async function callAgent(agentId: string, token: string, message: string, signal
     body: JSON.stringify({ chatId: null, message, files: [] }),
     signal,
   });
-  if (!res.ok || !res.body) throw new Error(`Interact agent call failed: ${res.status}`);
+  if (!res.ok || !res.body) {
+    const text = await res.text().catch(() => '');
+    throw new Error(`Interact agent call failed: ${res.status} ${text.slice(0, 200)}`);
+  }
 
   const reader = res.body.getReader();
   const decoder = new TextDecoder();

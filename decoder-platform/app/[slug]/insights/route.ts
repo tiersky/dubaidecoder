@@ -81,9 +81,17 @@ export async function POST(req: NextRequest, ctx: RouteContext<'/[slug]/insights
     }
     if (err instanceof AllAgentsFailedError) {
       console.error('[insights]', err.message);
-      return json({ error: 'The AI service is busy right now. Try again in a minute.', code: 'unavailable' }, 502);
+      return json(
+        { error: 'The AI service is busy right now. Try again in a minute.', code: 'unavailable', ...(access.role === 'admin' && { detail: err.message }) },
+        502
+      );
     }
-    console.error('[insights] failed:', err instanceof Error ? err.message : err);
-    return json({ error: 'Could not produce the analysis. Try again.', code: 'failed' }, 500);
+    const reason = err instanceof Error ? err.message : String(err);
+    console.error('[insights] failed:', reason);
+    // Admins see the cause so a misconfiguration is diagnosable without logs.
+    return json(
+      { error: 'Could not produce the analysis. Try again.', code: 'failed', ...(access.role === 'admin' && { detail: reason.slice(0, 300) }) },
+      500
+    );
   }
 }
