@@ -40,7 +40,7 @@ afterEach(() => {
 
 describe('agentChain', () => {
   it('defaults to Sonnet, then Gemini 2.5 Pro, then Haiku', () => {
-    expect(agentChain(undefined).map((a) => a.name)).toEqual(['Claude Sonnet', 'Gemini 2.5 Pro', 'Claude Haiku']);
+    expect(agentChain(undefined).map((a) => a.name)).toEqual(['Claude Sonnet 4.5', 'Gemini 2.5 Pro', 'Claude Haiku 4.5']);
   });
   it('accepts an env override and ignores malformed parts', () => {
     expect(agentChain('X:1, bad ,Y:2')).toEqual([
