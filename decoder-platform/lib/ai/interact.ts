@@ -3,9 +3,8 @@
  * token, then a streamed agent call.
  * Server-only: INTERACT_CLIENT_ID / INTERACT_CLIENT_SECRET never reach the browser.
  *
- * After the Omni migration, OAuth tokens come from omni.omc.com while the
- * chat-ai agent API is still served from interact.interpublic.com (Omni's
- * gateway has no chat-ai route yet, and the old host now blocks /api/token).
+ * Since the Omni migration both the OAuth token and the chat-ai agent API are
+ * served from omni.omc.com (interact.interpublic.com now returns Akamai 403s).
  * Each host is env-overridable so the next move needs no code change:
  * INTERACT_AUTH_URL, INTERACT_AGENTS_BASE_URL, INTERACT_APPLICATION_ID,
  * INTERACT_ORGANIZATION_ID, INTERACT_WHITELABEL.
@@ -14,7 +13,7 @@
 const env = (key: string, fallback: string) => process.env[key]?.trim() || fallback;
 const trim = (url: string) => url.replace(/\/+$/, '');
 const authUrl = () => env('INTERACT_AUTH_URL', 'https://omni.omc.com/api/token');
-const agentsBase = () => trim(env('INTERACT_AGENTS_BASE_URL', 'https://interact.interpublic.com/api/chat-ai/v1'));
+const agentsBase = () => trim(env('INTERACT_AGENTS_BASE_URL', 'https://omni.omc.com/api/chat-ai/v1'));
 const applicationId = () =>
   env('INTERACT_APPLICATION_ID', 'https://interact.interpublic.com/chat-ai/#/app/(chat/new//sidepanel:bots/list)');
 const organizationId = () => env('INTERACT_ORGANIZATION_ID', '0BDRDXZ6CX7MS');
