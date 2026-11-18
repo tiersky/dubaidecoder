@@ -143,7 +143,7 @@ function InsightBody({ insight }: { insight: MarketInsight }) {
   return (
     <div className="mt-4">
       <p className="display materialize text-[21px] font-semibold text-ink sm:text-[23px]">{insight.headline}</p>
-      <p className="materialize mt-2 max-w-[75ch] text-[14.5px] leading-relaxed text-ink" style={{ ['--i' as string]: 1 }}>
+      <p className="materialize mt-2 text-[14.5px] leading-relaxed text-ink" style={{ ['--i' as string]: 1 }}>
         {insight.overview}
       </p>
 
