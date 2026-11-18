@@ -89,16 +89,9 @@ export default function MarketInsightCard({ slug, market, industry, canRegenerat
 
   return (
     <section aria-label={`AI analysis of ${market}`} aria-busy={state.status === 'loading' || regenerating} className="glass-card overflow-hidden p-5 sm:p-6">
-      <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <SparkleIcon />
-          <h2 className="text-[15px] font-semibold text-ink">AI market analysis</h2>
-        </div>
-        {state.status === 'ready' && (
-          <span className="rounded-full bg-black/[0.05] px-2.5 py-1 text-[11px] font-medium text-ink-2">
-            {state.data.model}
-          </span>
-        )}
+      <div className="flex items-center gap-2">
+        <SparkleIcon />
+        <h2 className="text-[15px] font-semibold text-ink">AI market analysis</h2>
       </div>
 
       {state.status === 'loading' && <Loading market={market} industry={industry} />}
