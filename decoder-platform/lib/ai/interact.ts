@@ -183,6 +183,6 @@ export async function generateWithFallback<T>(
 
 export class AllAgentsFailedError extends Error {
   constructor(public attempts: Array<{ agent: string; outcome: string }>) {
-    super(`All Interact agents failed: ${attempts.map((a) => `${a.agent}=${a.outcome}`).join(', ')}`);
+    super(`All AI models failed: ${attempts.map((a) => `${a.agent}=${a.outcome}`).join(', ')}`);
   }
 }

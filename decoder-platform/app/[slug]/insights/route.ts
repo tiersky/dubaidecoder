@@ -4,11 +4,12 @@ import { authorize } from '@/lib/auth/access';
 import { getPublishedConfig } from '@/lib/versions/store';
 import { buildMarketContext, contextFingerprint } from '@/lib/ai/market-context';
 import { buildInsightPrompt, parseInsight } from '@/lib/ai/insight';
-import { generateWithFallback, AllAgentsFailedError, InteractConfigError } from '@/lib/ai/interact';
+import { AllAgentsFailedError, InteractConfigError } from '@/lib/ai/interact';
+import { generate } from '@/lib/ai/generate';
 import { getCachedInsight, saveInsight, type StoredInsight } from '@/lib/ai/insights-store';
 
 export const dynamic = 'force-dynamic';
-// Up to three agents in sequence; each typically answers in 10–25s.
+// Claude API first, then up to three Interact agents in sequence.
 export const maxDuration = 120;
 
 /** Concurrent requests for the same analysis share one generation per instance. */
@@ -63,7 +64,7 @@ export async function POST(req: NextRequest, ctx: RouteContext<'/[slug]/insights
       pending = (async () => {
         // No client abort signal: a generation the viewer walks away from
         // still completes and is cached for the next visit.
-        const { result, agent } = await generateWithFallback(buildInsightPrompt(marketCtx), parseInsight);
+        const { result, agent } = await generate(buildInsightPrompt(marketCtx), parseInsight);
         return saveInsight({ slug, market, fingerprint, model: agent, insight: result, createdBy: null }).catch(
           (err): StoredInsight => {
             console.error('[insights] cache write failed:', err instanceof Error ? err.message : err);
@@ -76,7 +77,7 @@ export async function POST(req: NextRequest, ctx: RouteContext<'/[slug]/insights
     return json({ ...(await pending), cached: false });
   } catch (err) {
     if (err instanceof InteractConfigError) {
-      console.error('[insights] Interact credentials missing');
+      console.error('[insights] no AI credentials (CLAUDE_AGENT_API_KEY or INTERACT_*)');
       return json({ error: 'AI analysis is not configured yet.', code: 'not_configured' }, 503);
     }
     if (err instanceof AllAgentsFailedError) {
