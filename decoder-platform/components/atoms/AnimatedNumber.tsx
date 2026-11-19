@@ -7,6 +7,8 @@ interface AnimatedNumberProps {
   format: (value: number) => string;
   /** ms; tweens are interruptible and always start from the on-screen value. */
   duration?: number;
+  /** Start value for a count-up on mount. Defaults to `value` (no tween). */
+  from?: number;
   className?: string;
 }
 
@@ -21,12 +23,13 @@ export default function AnimatedNumber({
   value,
   format,
   duration = 480,
+  from,
   className = '',
 }: AnimatedNumberProps) {
   const ref = useRef<HTMLSpanElement>(null);
-  const shown = useRef(value);
+  const shown = useRef(from ?? value);
   // Frozen after mount on purpose: React never rewrites the text node.
-  const [initialText] = useState(() => format(value));
+  const [initialText] = useState(() => format(from ?? value));
   const formatRef = useRef(format);
   useLayoutEffect(() => {
     formatRef.current = format;

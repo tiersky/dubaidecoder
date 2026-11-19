@@ -7,12 +7,14 @@ import Sidebar from '@/components/organisms/Sidebar';
 import GlobalOverview from '@/components/templates/GlobalOverview';
 import CountryDetail from '@/components/templates/CountryDetail';
 import BudgetAllocation from '@/components/templates/BudgetAllocation';
+import CultureExplorer from '@/components/templates/CultureExplorer';
 
-type TabId = 'global' | 'budget';
+type TabId = 'global' | 'budget' | 'culture';
 
 const TABS: Array<{ id: TabId; label: string; shortLabel: string }> = [
   { id: 'global', label: 'Global Overview', shortLabel: 'Overview' },
   { id: 'budget', label: 'Budget Allocation', shortLabel: 'Budget' },
+  { id: 'culture', label: 'Culture', shortLabel: 'Culture' },
 ];
 
 interface DashboardClientProps {
@@ -27,7 +29,7 @@ export default function DashboardClient({ vm, ai }: DashboardClientProps) {
 
   const selectMarket = useCallback((name: string | null) => {
     setSelectedMarketName(name);
-    setCurrentTab((tab) => (tab === 'budget' ? 'global' : tab));
+    setCurrentTab('global');
   }, []);
 
   const handleSelectFromMap = useCallback(
@@ -41,7 +43,7 @@ export default function DashboardClient({ vm, ai }: DashboardClientProps) {
 
   const handleTabChange = useCallback((tab: string) => {
     setCurrentTab(tab as TabId);
-    if (tab === 'budget') {
+    if (tab !== 'global') {
       setSelectedMarketName(null);
     }
   }, []);
@@ -90,6 +92,7 @@ export default function DashboardClient({ vm, ai }: DashboardClientProps) {
           currency={vm.currency}
           allocations={overviewAllocations}
           onSelectCountry={handleSelectFromMap}
+          onOpenCulture={() => handleTabChange('culture')}
         />
       )}
 
@@ -104,11 +107,16 @@ export default function DashboardClient({ vm, ai }: DashboardClientProps) {
           slug={vm.slug}
           industry={vm.industry ?? null}
           ai={ai}
+          context={Boolean(ai)}
           onBack={handleBack}
+          onSelectMarket={selectMarket}
+          onOpenCulture={() => handleTabChange('culture')}
         />
       )}
 
       {currentTab === 'budget' && <BudgetAllocation vm={vm} />}
+
+      {currentTab === 'culture' && <CultureExplorer markets={vm.markets} onSelectMarket={selectMarket} slug={vm.slug} aiEnabled={Boolean(ai)} />}
     </DashboardLayout>
   );
 }
