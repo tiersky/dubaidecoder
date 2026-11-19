@@ -1,6 +1,6 @@
-import { MetricDef, computeModel } from '../model/score';
-import { FixedAllocation, VersionConfig } from '../config/types';
-import { applyFixedAllocation } from '../model/allocate';
+import { MetricDef } from '../model/score';
+import { AllocationModel, FixedAllocation, MarketControl, PlanningSettings, VersionConfig } from '../config/types';
+import { computeAllocation, type AllocationRow as ModelRow } from '../model/allocation';
 
 export interface MarketVm {
   name: string;
@@ -32,21 +32,27 @@ export interface DashboardVm {
   defaults: { xAxis: string; yAxis: string; bubbleSize: string };
   allocation?: FixedAllocation;
   industry?: string;
+  model: AllocationModel;
+  universe?: string[];
+  marketControls?: Record<string, MarketControl>;
+  planning?: PlanningSettings;
+  concentration?: number;
 }
 
 export function deriveDashboard(config: VersionConfig): DashboardVm {
-  const result = computeModel(
-    config.markets.map((m) => ({ name: m.name, enabled: m.enabled, values: m.values })),
-    config.metrics
-  );
-  const byName = new Map(result.markets.map((m) => [m.name, m]));
-  const fixedBudgets = config.allocation
-    ? applyFixedAllocation(
-        config.allocation,
-        new Set(config.markets.filter((m) => m.enabled).map((m) => m.name)),
-        config.defaultBudget
-      )
-    : null;
+  const model = computeAllocation({
+    model: config.model ?? 'workbook',
+    metrics: config.metrics,
+    markets: config.markets,
+    budget: config.defaultBudget,
+    funded: new Set(config.markets.filter((m) => m.enabled).map((m) => m.name)),
+    ...(config.universe && { universe: new Set(config.universe) }),
+    allocation: config.allocation,
+    controls: config.marketControls,
+    planning: config.planning,
+    concentration: config.concentration,
+  });
+  const byName = new Map(model.rows.map((r) => [r.name, r]));
   const markets: MarketVm[] = config.markets.map((m) => {
     const r = byName.get(m.name)!;
     return {
@@ -58,7 +64,7 @@ export function deriveDashboard(config: VersionConfig): DashboardVm {
       values: m.values,
       indices: r.indices,
       score: r.score,
-      split: fixedBudgets ? (fixedBudgets.get(m.name) ?? 0) / config.defaultBudget : r.split,
+      split: r.share,
     };
   });
   const metricOptions = config.metrics.map((m) => ({ value: m.key, label: m.label }));
@@ -88,6 +94,11 @@ export function deriveDashboard(config: VersionConfig): DashboardVm {
     },
     ...(config.allocation ? { allocation: config.allocation } : {}),
     ...(config.context?.industry ? { industry: config.context.industry } : {}),
+    model: config.model ?? 'workbook',
+    ...(config.universe && { universe: config.universe }),
+    ...(config.marketControls && { marketControls: config.marketControls }),
+    ...(config.planning && { planning: config.planning }),
+    ...(config.concentration !== undefined && { concentration: config.concentration }),
   };
 }
 
@@ -98,36 +109,48 @@ export interface AllocationRow {
   split: number;
   budget: number;
   enabled: boolean;
+  /** v2 detail: quality, coverage, priority, reach, saturation, marginal return, missing inputs. */
+  detail: ModelRow;
 }
 
+/** Live allocation for the dashboard; every model goes through computeAllocation. */
 export function computeAllocations(
   markets: MarketVm[],
   metrics: MetricDef[],
   weights: Record<string, number>,
   enabledNames: Set<string>,
   totalBudget: number,
-  allocation?: FixedAllocation
+  allocation?: FixedAllocation,
+  v2: {
+    model?: AllocationModel;
+    universe?: string[];
+    controls?: Record<string, MarketControl>;
+    planning?: PlanningSettings;
+    concentration?: number;
+    population?: Record<string, number | null | undefined>;
+  } = {}
 ): AllocationRow[] {
-  const weighted = metrics.map((m) => ({ ...m, weight: weights[m.key] ?? 0 }));
-  const result = computeModel(
-    markets.map((m) => ({ name: m.name, enabled: enabledNames.has(m.name), values: m.values })),
-    weighted
-  );
-  const geo = new Map(markets.map((m) => [m.name, m.iso2]));
-  const fixedBudgets = allocation
-    ? applyFixedAllocation(allocation, enabledNames, totalBudget)
-    : null;
-  return result.markets.map((m) => {
-    const budget = fixedBudgets
-      ? m.enabled ? (fixedBudgets.get(m.name) ?? 0) : 0
-      : m.split * totalBudget;
-    return {
-      name: m.name,
-      iso2: geo.get(m.name) ?? null,
-      score: m.score,
-      split: fixedBudgets ? (totalBudget > 0 ? budget / totalBudget : 0) : m.split,
-      budget,
-      enabled: m.enabled,
-    };
+  const result = computeAllocation({
+    model: v2.model ?? 'workbook',
+    metrics: metrics.map((m) => ({ ...m, weight: weights[m.key] ?? 0 })),
+    markets,
+    budget: totalBudget,
+    funded: enabledNames,
+    ...(v2.universe && { universe: new Set(v2.universe) }),
+    allocation,
+    controls: v2.controls,
+    planning: v2.planning,
+    concentration: v2.concentration,
+    population: v2.population,
   });
+  const geo = new Map(markets.map((m) => [m.name, m.iso2]));
+  return result.rows.map((r) => ({
+    name: r.name,
+    iso2: geo.get(r.name) ?? null,
+    score: r.score,
+    split: r.share,
+    budget: r.budget,
+    enabled: r.funded,
+    detail: r,
+  }));
 }

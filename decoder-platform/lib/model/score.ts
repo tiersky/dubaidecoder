@@ -3,6 +3,11 @@ import { sampleStats, type SampleStats } from './stats';
 
 export type Direction = 'higher' | 'lower';
 
+/** How a metric is measured; drives the transform in the v2 models. */
+export type MetricKind = 'measure' | 'ratio' | 'score';
+/** What a metric feeds in the v2 models beyond the quality score. */
+export type MetricRole = 'audienceSize' | 'audienceRatio' | 'cpm' | 'priority';
+
 export interface MetricDef {
   key: string;
   label: string;
@@ -10,6 +15,14 @@ export interface MetricDef {
   direction: Direction;
   source?: string;
   description?: string;
+  /** v2 only. Default 'measure'. */
+  kind?: MetricKind;
+  /** v2 only. Default 'none'. 'log' for heavy-tailed measures. */
+  transform?: 'none' | 'log';
+  /** v2 only; required for kind 'score': the fixed scale it is judged on. */
+  scale?: { min: number; max: number };
+  /** v2 only. A 'priority' metric (e.g. Market Tier) is human media expertise, not a factor. */
+  role?: MetricRole;
 }
 
 export interface MarketInput {

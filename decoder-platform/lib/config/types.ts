@@ -21,6 +21,30 @@ export interface VersionContext {
   brief?: string;    // what is being marketed, to whom, and why
 }
 
+/** Which allocation model a version uses. See lib/model/allocation.ts. */
+export type AllocationModel = 'workbook' | 'score' | 'optimised';
+
+/** Human controls per market ("media expertise"), v2 models only. */
+export interface MarketControl {
+  priority?: number; // 0.5–2 multiplier, default 1
+  reason?: string;
+  lock?: number; // fixed amount, taken off the top
+  min?: number;
+  max?: number;
+  setBy?: string;
+  setAt?: string; // ISO date
+}
+
+/** Planning assumptions for the optimised model. */
+export interface PlanningSettings {
+  frequency?: number; // effective frequency κ, default 3
+  perMarketFrequency?: Record<string, number>;
+  /** Multiplies CPM values into the budget currency. Default 1. */
+  cpmToBudgetRate?: number;
+  /** Strength of Market Tier as priority: h = (tier / median tier)^γ. Fitted per version. */
+  tierGamma?: number;
+}
+
 export interface VersionConfig {
   name: string;          // "Qatar Decoder"
   slug: string;          // "qatar" — ^[a-z0-9-]+$
@@ -30,4 +54,12 @@ export interface VersionConfig {
   markets: MarketRow[];
   allocation?: FixedAllocation;
   context?: VersionContext;
+  /** Default 'workbook' (exact Excel parity). */
+  model?: AllocationModel;
+  /** Allocation universe: the markets statistics are pegged to. Default: all markets. */
+  universe?: string[];
+  marketControls?: Record<string, MarketControl>;
+  planning?: PlanningSettings;
+  /** Concentration p for the score model: share ∝ (q·h)^p. Default 1. */
+  concentration?: number;
 }
