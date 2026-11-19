@@ -3,7 +3,9 @@ import { deriveDashboard, computeAllocations } from './derive';
 import { egyptMetrics, egyptMarkets, egyptExpected } from '../model/fixtures/egypt-week6';
 import type { VersionConfig } from '../config/types';
 
+// These tests pin the workbook formula; unset-model versions are covered below.
 const config: VersionConfig = {
+  model: 'workbook',
   name: 'Egypt Decoder',
   slug: 'egypt',
   currency: 'USD',
@@ -86,5 +88,48 @@ describe('fixed allocation', () => {
     expect(rows[0].budget).toBe(first.enabled ? 1000000 : 0);
     const total = rows.reduce((a, r) => a + r.budget, 0);
     expect(total).toBeCloseTo(14000000, 3);
+  });
+});
+
+describe('legacy versions (no model set)', () => {
+  const { model: _m, ...legacy } = config;
+  void _m;
+  const vm = deriveDashboard(legacy);
+
+  it('run on the score model with a fitted tier strength, close to the workbook split', () => {
+    expect(vm.model).toBe('score');
+    expect(vm.metrics.find((m) => /tier/i.test(m.label))?.role).toBe('priority');
+    expect(vm.planning?.tierGamma).toBeGreaterThan(0);
+    const old = deriveDashboard(config);
+    const oldSplit = new Map(old.markets.map((m) => [m.name, m.split]));
+    const worst = Math.max(...vm.markets.map((m) => Math.abs(m.split - oldSplit.get(m.name)!)));
+    expect(worst).toBeLessThan(0.025);
+    expect(vm.markets.reduce((a, m) => a + m.split, 0)).toBeCloseTo(1, 9);
+  });
+
+  it('leave a version that names its model untouched', () => {
+    expect(deriveDashboard(config).model).toBe('workbook');
+  });
+});
+
+describe('one statistics universe across views', () => {
+  it('the Overview rows match the dashboard view model when markets are switched off', () => {
+    const { model: _m, ...legacy } = config;
+    void _m;
+    const off = { ...legacy, markets: legacy.markets.map((m, i) => (i < 2 ? { ...m, enabled: false } : m)) };
+    const vm = deriveDashboard(off);
+    const enabled = new Set(vm.markets.filter((m) => m.enabled).map((m) => m.name));
+    const rows = computeAllocations(vm.markets, vm.metrics, vm.defaultWeights, enabled, vm.defaultBudget, vm.allocation, {
+      model: vm.model,
+      universe: vm.universe,
+      controls: vm.marketControls,
+      planning: vm.planning,
+    });
+    for (const m of vm.markets) expect(rows.find((r) => r.name === m.name)!.split).toBeCloseTo(m.split, 12);
+    // Switched-off markets are out of the comparison set, so they don't move the others.
+    // Same converted settings (the γ fit and log choices depend on the market list).
+    const pinned = { ...off, model: vm.model, metrics: vm.metrics, planning: vm.planning };
+    const without = deriveDashboard({ ...pinned, markets: off.markets.slice(2) });
+    for (const m of without.markets) expect(vm.markets.find((x) => x.name === m.name)!.split).toBeCloseTo(m.split, 12);
   });
 });

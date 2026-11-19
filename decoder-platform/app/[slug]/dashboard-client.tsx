@@ -61,9 +61,16 @@ export default function DashboardClient({ vm, ai }: DashboardClientProps) {
         vm.defaultWeights,
         defaultEnabledNames,
         vm.defaultBudget,
-        vm.allocation
+        vm.allocation,
+        {
+          model: vm.model,
+          ...(vm.universe && { universe: vm.universe }),
+          controls: vm.marketControls,
+          planning: vm.planning,
+          concentration: vm.concentration,
+        }
       ),
-    [vm.markets, vm.metrics, vm.defaultWeights, defaultEnabledNames, vm.defaultBudget, vm.allocation]
+    [vm, defaultEnabledNames]
   );
 
   const selectedMarket = selectedMarketName
@@ -93,6 +100,7 @@ export default function DashboardClient({ vm, ai }: DashboardClientProps) {
           allocations={overviewAllocations}
           onSelectCountry={handleSelectFromMap}
           onOpenCulture={() => handleTabChange('culture')}
+          recommendations={vm.recommendations}
         />
       )}
 

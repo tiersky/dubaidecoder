@@ -20,11 +20,14 @@ export default async function AdminPage() {
         <h1 className="text-2xl font-semibold text-slate-800 text-center">Admin</h1>
 
         <div className="mt-6 flex items-center justify-center gap-4 text-sm">
+          <Link href="/admin/new" className="btn-primary px-4 py-2">
+            New guided decoder
+          </Link>
           <Link
             href="/admin/upload"
             className="glass-input glass-card-hover rounded-lg px-4 py-2 font-medium text-slate-800"
           >
-            New version / update
+            Upload workbook
           </Link>
           <Link
             href="/admin/users"
@@ -62,6 +65,12 @@ export default async function AdminPage() {
                   >
                     Tweaks
                   </Link>
+                  <Link
+                    href={`/admin/${v.slug}/build`}
+                    className="font-semibold text-slate-700 underline decoration-slate-300 underline-offset-4"
+                  >
+                    Build
+                  </Link>
                 </span>
               </li>
             ))}
@@ -82,7 +91,7 @@ export default async function AdminPage() {
                     <span>{d.slug}</span>
                     <span>{new Date(d.updatedAt).toLocaleDateString()}</span>
                     <Link
-                      href={`/admin/${d.slug}/confirm`}
+                      href={d.workbookPath ? `/admin/${d.slug}/confirm` : `/admin/${d.slug}/build`}
                       className="font-semibold text-slate-700 underline decoration-slate-300 underline-offset-4"
                     >
                       Resume

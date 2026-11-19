@@ -109,3 +109,36 @@ describe('validateConfig allocation', () => {
     }
   });
 });
+
+describe('validateConfig — allocation model v2 fields', () => {
+  it('accepts a v2 config and keeps its settings', () => {
+    const r = validateConfig({
+      ...good,
+      model: 'optimised',
+      universe: ['Russia', 'Germany', 'Poland'],
+      marketControls: { Germany: { priority: 1.5, reason: 'Sales office', min: 1000 } },
+      planning: { frequency: 3, tierGamma: 0.13 },
+      metrics: good.metrics.map((m) => (m.key === 'marketTier' ? { ...m, role: 'priority' } : m)),
+    });
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.config.marketControls?.Germany.priority).toBe(1.5);
+  });
+
+  it('rejects a judgment score without a scale, duplicate roles, unknown names and min above max', () => {
+    const r = validateConfig({
+      ...good,
+      universe: ['Atlantis'],
+      marketControls: { Germany: { min: 10, max: 5 } },
+      metrics: good.metrics.map((m) =>
+        m.key === 'marketTier' ? { ...m, kind: 'score' } : m.key === 'mediaCost' || m.key === 'audienceRatio' ? { ...m, role: 'cpm' } : m
+      ),
+    });
+    expect(r.ok).toBe(false);
+    if (!r.ok) {
+      expect(r.errors.join('\n')).toMatch(/needs a declared scale/);
+      expect(r.errors.join('\n')).toMatch(/more than one "cpm"/);
+      expect(r.errors.join('\n')).toMatch(/universe: unknown market "Atlantis"/);
+      expect(r.errors.join('\n')).toMatch(/min is above max/);
+    }
+  });
+});

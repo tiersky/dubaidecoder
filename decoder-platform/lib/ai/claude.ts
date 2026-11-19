@@ -45,3 +45,39 @@ export async function callClaude(prompt: string, signal?: AbortSignal): Promise<
     .trim();
   return { text, model: response.model };
 }
+
+export const RECOMMEND_MODEL = 'claude-opus-5-5';
+
+/**
+ * One prompt with a JSON-schema-constrained reply, streamed so a long Opus
+ * run doesn't hit HTTP timeouts. Returns the raw JSON text ('' on refusal).
+ */
+export async function callClaudeStructured(opts: {
+  prompt: string;
+  schema: Record<string, unknown>;
+  model?: string;
+  effort?: 'low' | 'medium' | 'high' | 'xhigh' | 'max';
+  maxTokens?: number;
+  signal?: AbortSignal;
+}): Promise<{ text: string; model: string }> {
+  const client = new Anthropic({ apiKey: apiKey(), timeout: 280_000, maxRetries: 1 });
+  const stream = client.messages.stream(
+    {
+      model: opts.model ?? claudeModel(),
+      max_tokens: opts.maxTokens ?? 32000,
+      output_config: {
+        effort: opts.effort ?? 'high',
+        format: { type: 'json_schema', schema: opts.schema },
+      },
+      messages: [{ role: 'user', content: opts.prompt }],
+    },
+    { signal: opts.signal }
+  );
+  const message = await stream.finalMessage();
+  if (message.stop_reason === 'refusal') return { text: '', model: message.model };
+  const text = message.content
+    .map((block) => (block.type === 'text' ? block.text : ''))
+    .join('')
+    .trim();
+  return { text, model: message.model };
+}

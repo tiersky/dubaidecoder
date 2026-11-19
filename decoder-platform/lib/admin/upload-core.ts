@@ -104,8 +104,12 @@ export function applyDraftEdits(
   if (edits.currency !== undefined) next.currency = edits.currency;
   if (edits.defaultBudget !== undefined) next.defaultBudget = edits.defaultBudget;
   if (edits.context !== undefined) {
-    const ctx = normalizeContext(edits.context);
-    if (ctx) next.context = ctx;
+    // Industry and brief come from the form; objective and destination are kept.
+    const { industry: _i, brief: _b, ...kept } = next.context ?? {};
+    void _i;
+    void _b;
+    const merged = { ...kept, ...normalizeContext(edits.context) };
+    if (Object.keys(merged).length) next.context = merged;
     else delete next.context;
   }
 

@@ -12,11 +12,12 @@ const TIMEOUT_MS = 8000;
 
 export const iso3Of = (iso2: string) => whereAlpha2(iso2.toUpperCase())?.alpha3 ?? null;
 
-async function get(url: string, accept?: string): Promise<string> {
+async function get(url: string, accept?: string, opts: { large?: boolean } = {}): Promise<string> {
   const res = await fetch(url, {
     headers: { 'User-Agent': 'country-decoder/1.0', ...(accept && { Accept: accept }) },
-    next: { revalidate: DAY },
-    signal: AbortSignal.timeout(TIMEOUT_MS),
+    // Responses over 2 MB can't enter Next's data cache; callers cache those in memory.
+    ...(opts.large ? { cache: 'no-store' as const } : { next: { revalidate: DAY } }),
+    signal: AbortSignal.timeout(opts.large ? TIMEOUT_MS * 4 : TIMEOUT_MS),
   });
   if (!res.ok) throw new Error(`${res.status} from ${new URL(url).host}`);
   return res.text();
@@ -74,11 +75,12 @@ export function parseImfCsv(csv: string): Map<string, Map<ImfIndicator, Map<numb
   return out;
 }
 
-async function imf(iso3s: string[]) {
+/** 'all' fetches every country (~3 MB, uncacheable by Next; see loadAllCountryData). */
+async function imf(iso3s: string[] | 'all') {
   const url =
     'https://api.imf.org/external/sdmx/3.0/data/dataflow/IMF.RES/WEO/~/' +
-    `${iso3s.join('+')}.${Object.keys(IMF_INDICATORS).join('+')}.A`;
-  return parseImfCsv(await get(url, 'application/vnd.sdmx.data+csv;version=2.0.0'));
+    `${iso3s === 'all' ? '*' : iso3s.join('+')}.${Object.keys(IMF_INDICATORS).join('+')}.A`;
+  return parseImfCsv(await get(url, 'application/vnd.sdmx.data+csv;version=2.0.0', { large: iso3s === 'all' }));
 }
 
 // ---------- World Bank Indicators (JSON) ----------
@@ -162,7 +164,25 @@ export async function loadCountryData(iso2s: string[], thisYear = new Date().get
   const markets = [...new Set(iso2s.map((c) => c.toLowerCase()))]
     .map((iso2) => ({ iso2, iso3: iso3Of(iso2) }))
     .filter((m): m is { iso2: string; iso3: string } => Boolean(m.iso3));
-  const iso3s = markets.map((m) => m.iso3);
+  return assemble(markets, markets.length ? markets.map((m) => m.iso3) : null, thisYear);
+}
+
+/**
+ * Every country at once, for the recommender universe. IMF is fetched with a
+ * wildcard (one ~3 MB response); the result should be cached by the caller.
+ */
+export async function loadAllCountryData(iso2s: string[], thisYear = new Date().getUTCFullYear()): Promise<CountryDataResponse> {
+  const markets = [...new Set(iso2s.map((c) => c.toLowerCase()))]
+    .map((iso2) => ({ iso2, iso3: iso3Of(iso2) }))
+    .filter((m): m is { iso2: string; iso3: string } => Boolean(m.iso3));
+  return assemble(markets, 'all', thisYear);
+}
+
+async function assemble(
+  markets: Array<{ iso2: string; iso3: string }>,
+  imfQuery: string[] | 'all' | null,
+  thisYear: number
+): Promise<CountryDataResponse> {
   const unavailable = new Set<string>();
 
   const settle = async <T>(source: string, p: Promise<T>): Promise<T | null> => {
@@ -176,7 +196,7 @@ export async function loadCountryData(iso2s: string[], thisYear = new Date().get
   };
 
   const [imfData, wb, life, hdi] = await Promise.all([
-    iso3s.length ? settle('IMF', imf(iso3s)) : null,
+    imfQuery ? settle('IMF', imf(imfQuery)) : null,
     worldBankAll(settle),
     settle('Our World in Data', owid('happiness-cantril-ladder')),
     settle('Our World in Data', owid('human-development-index')),
