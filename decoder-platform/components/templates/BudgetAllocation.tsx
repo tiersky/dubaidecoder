@@ -1,7 +1,10 @@
 'use client';
 
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useDeferredValue } from 'react';
 import { DashboardVm, computeAllocations } from '@/lib/dashboard/derive';
+import { computeAllocation, type AllocationRequest } from '@/lib/model/allocation';
+import { nextIncrement, simulateAllocation } from '@/lib/model/uncertainty';
+import ModelExplainer from '@/components/organisms/ModelExplainer';
 import GlassCard from '@/components/atoms/GlassCard';
 import SelectDropdown from '@/components/atoms/SelectDropdown';
 import BudgetInputField from '@/components/molecules/BudgetInputField';
@@ -42,11 +45,51 @@ export default function BudgetAllocation({ vm }: BudgetAllocationProps) {
     [vm.markets, enabledNames]
   );
 
+  // Toggling a market changes the allocation country list: v2 statistics are
+  // recomputed as if it had never been in the list.
+  const universe = useMemo(
+    () => (vm.universe ?? vm.markets.map((m) => m.name)).filter((n) => enabledNames.has(n)),
+    [vm.universe, vm.markets, enabledNames]
+  );
+  const v2 = vm.model !== 'workbook';
   const allocations = useMemo(
     () =>
-      computeAllocations(vm.markets, vm.metrics, weights, enabledNames, totalBudget, vm.allocation),
-    [vm.markets, vm.metrics, weights, enabledNames, totalBudget, vm.allocation]
+      computeAllocations(vm.markets, vm.metrics, weights, enabledNames, totalBudget, vm.allocation, {
+        model: vm.model,
+        ...(v2 && { universe }),
+        controls: vm.marketControls,
+        planning: vm.planning,
+        concentration: vm.concentration,
+      }),
+    [vm, weights, enabledNames, totalBudget, universe, v2]
   );
+
+  const request: AllocationRequest = useMemo(
+    () => ({
+      model: vm.model,
+      metrics: vm.metrics.map((m) => ({ ...m, weight: weights[m.key] ?? 0 })),
+      markets: vm.markets,
+      budget: totalBudget,
+      funded: enabledNames,
+      ...(v2 && { universe: new Set(universe) }),
+      allocation: vm.allocation,
+      controls: vm.marketControls,
+      planning: vm.planning,
+      concentration: vm.concentration,
+    }),
+    [vm, weights, totalBudget, enabledNames, universe, v2]
+  );
+  // The simulation trails slider drags instead of blocking them.
+  const deferred = useDeferredValue(request);
+  const uncertainty = useMemo(() => (v2 && deferred.budget > 0 ? simulateAllocation(deferred, 400) : null), [deferred, v2]);
+  const step = useMemo(() => {
+    const raw = totalBudget * 0.05;
+    const mag = 10 ** Math.floor(Math.log10(Math.max(raw, 1)));
+    return Math.max(mag, Math.round(raw / mag) * mag);
+  }, [totalBudget]);
+  const next = useMemo(() => (deferred.budget > 0 ? nextIncrement(deferred, step) : []), [deferred, step]);
+  const warnings = useMemo(() => (v2 ? computeAllocation(deferred).warnings : []), [deferred, v2]);
+  const recommended = useMemo(() => new Set(vm.recommendedMarkets), [vm.recommendedMarkets]);
 
   return (
     <div className="space-y-5">
@@ -54,6 +97,16 @@ export default function BudgetAllocation({ vm }: BudgetAllocationProps) {
         <h1 className="display text-[28px] font-semibold text-ink sm:text-[32px]">Budget Allocation</h1>
         <p className="mt-1.5 text-[14px] text-ink-2">Interactive market analysis and budget optimization</p>
       </div>
+
+      <ModelExplainer
+        model={vm.model}
+        currency={vm.currency}
+        totalBudget={totalBudget}
+        ranges={uncertainty?.ranges}
+        next={next}
+        step={step}
+        warnings={warnings}
+      />
 
       <ChartCard
         title="Market analysis"
@@ -98,7 +151,8 @@ export default function BudgetAllocation({ vm }: BudgetAllocationProps) {
 
           <ModelWeightsPanel
             className="flex-1"
-            metrics={vm.metrics}
+            // In v2 the tier is a priority multiplier, not a weighted factor.
+            metrics={v2 ? vm.metrics.filter((m) => m.role !== 'priority') : vm.metrics}
             weights={weights}
             onChange={setWeights}
             enabled={modelWeightsEnabled}
@@ -122,6 +176,10 @@ export default function BudgetAllocation({ vm }: BudgetAllocationProps) {
         currency={vm.currency}
         enabledNames={enabledNames}
         onToggleMarket={toggleMarket}
+        model={vm.model}
+        ranges={uncertainty?.ranges}
+        recommended={recommended}
+        controls={vm.marketControls}
       />
 
     </div>

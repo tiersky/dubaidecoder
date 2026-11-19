@@ -1,4 +1,6 @@
-import { VersionConfig } from '../config/types';
+import { AllocationModel, VersionConfig } from '../config/types';
+import { upgradeLegacyConfig } from '../model/migrate';
+import { canOptimise } from '../builder/catalog';
 import { normalizeContext } from '../admin/upload-core';
 import { validateConfig } from '../config/validate';
 import { VerificationReport } from '../parser/verify';
@@ -107,6 +109,7 @@ export interface TweakInput {
   marketEnabled?: Record<string, boolean>; // by market name
   weights?: Record<string, number>; // by metric key
   context?: { industry?: string; brief?: string }; // empty strings clear
+  model?: AllocationModel;
 }
 
 function draftFromRow(row: Record<string, unknown>): DraftRecord {
@@ -197,11 +200,12 @@ export async function publishDraft(
   if (!draft) throw new Error(`no draft for "${slug}"`);
   const { revision } = await publishVersion(draft.config, {
     createdBy: opts.createdBy,
-    workbookPathFor: (rev) => copyDraftToRevision(slug, rev),
+    // Guided drafts have no workbook (workbookPath '').
+    workbookPathFor: (rev) => (draft.workbookPath ? copyDraftToRevision(slug, rev) : Promise.resolve(null)),
   });
   // Only after the publish fully succeeded: clean up. Failures above leave
   // the draft untouched for retry.
-  await removeDraftWorkbook(slug);
+  if (draft.workbookPath) await removeDraftWorkbook(slug);
   await deleteDraftRow(slug);
   return { revision };
 }
@@ -213,12 +217,24 @@ export async function applyTweaks(
 ): Promise<{ revision: number }> {
   const config = await getPublishedConfig(slug);
   if (!config) throw new Error(`no published version for "${slug}"`);
-  const next: VersionConfig = structuredClone(config);
+  let next: VersionConfig = structuredClone(config);
+  if (tweaks.model !== undefined && tweaks.model !== (config.model ?? 'workbook')) {
+    // Leaving the workbook model: adopt the suggested metric settings and fitted tier strength first.
+    if (!config.model && tweaks.model !== 'workbook') next = upgradeLegacyConfig(next);
+    if (tweaks.model === 'optimised' && !canOptimise(next.metrics)) {
+      throw new Error('the optimised model needs an audience metric and a CPM metric');
+    }
+    next.model = tweaks.model;
+  }
   if (tweaks.defaultBudget !== undefined) next.defaultBudget = tweaks.defaultBudget;
   if (tweaks.currency !== undefined) next.currency = tweaks.currency;
   if (tweaks.context !== undefined) {
-    const ctx = normalizeContext(tweaks.context);
-    if (ctx) next.context = ctx;
+    // Industry and brief come from the form; objective and destination are kept.
+    const { industry: _i, brief: _b, ...kept } = next.context ?? {};
+    void _i;
+    void _b;
+    const merged = { ...kept, ...normalizeContext(tweaks.context) };
+    if (Object.keys(merged).length) next.context = merged;
     else delete next.context;
   }
   for (const [key, w] of Object.entries(tweaks.weights ?? {})) {

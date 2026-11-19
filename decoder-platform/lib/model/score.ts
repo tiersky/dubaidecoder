@@ -23,6 +23,10 @@ export interface MetricDef {
   scale?: { min: number; max: number };
   /** v2 only. A 'priority' metric (e.g. Market Tier) is human media expertise, not a factor. */
   role?: MetricRole;
+  /** Where values come from: 'public:<factKey>', 'distance', or 'manual' (typed in). */
+  provider?: string;
+  /** Display unit for entry and tooltips, e.g. '%', 'USD', 'people'. */
+  unit?: string;
 }
 
 export interface MarketInput {

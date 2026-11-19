@@ -1,4 +1,4 @@
-import type { FixedAllocation, MarketRow } from '../config/types';
+import type { FixedAllocation, MarketRow, VersionConfig } from '../config/types';
 import { computeAllocation } from './allocation';
 import type { MetricDef } from './score';
 
@@ -98,4 +98,27 @@ export function fitTierGamma(input: {
     if (e < best.rms) best = { gamma: Math.round(g * 100) / 100, rms: e };
   }
   return { ...best, rmsWithoutTier };
+}
+
+/**
+ * Moves a version with no model set (every workbook upload so far) onto the
+ * v2 score model: suggested metric settings, and γ fitted so budgets stay
+ * close to the workbook's. A version that names its model is left alone.
+ */
+export function upgradeLegacyConfig(config: VersionConfig): VersionConfig {
+  if (config.model) return config;
+  const v2Metrics = suggestMetricSettings(config.metrics, config.markets);
+  const fit = fitTierGamma({
+    metrics: config.metrics,
+    v2Metrics,
+    markets: config.markets,
+    budget: config.defaultBudget,
+    allocation: config.allocation,
+  });
+  return {
+    ...config,
+    model: 'score',
+    metrics: v2Metrics,
+    planning: { ...config.planning, ...(fit && config.planning?.tierGamma === undefined && { tierGamma: fit.gamma }) },
+  };
 }

@@ -12,6 +12,30 @@ const metricSchema = z.object({
   transform: z.enum(['none', 'log']).optional(),
   scale: z.object({ min: z.number(), max: z.number() }).optional(),
   role: z.enum(['audienceSize', 'audienceRatio', 'cpm', 'priority']).optional(),
+  provider: z.string().max(60).optional(),
+  unit: z.string().max(20).optional(),
+});
+
+const recommendationSchema = z.object({
+  generatedAt: z.string().max(40),
+  model: z.string().max(80),
+  summary: z.string().max(1000),
+  items: z
+    .array(
+      z.object({
+        iso2: z.string().length(2),
+        name: z.string().min(1).max(120),
+        fit: z.number().min(0).max(100),
+        lookalike: z.number().min(0).max(100),
+        closestSeed: z.string().max(120).nullable(),
+        headline: z.string().max(300),
+        reasons: z.array(z.string().max(500)).max(6),
+        risks: z.array(z.string().max(500)).max(4),
+        status: z.enum(['suggested', 'included', 'excluded']),
+      })
+    )
+    .max(40),
+  seedNotes: z.array(z.object({ iso2: z.string().length(2), note: z.string().max(500) })).max(10).optional(),
 });
 
 const controlSchema = z.object({
@@ -31,6 +55,7 @@ const marketSchema = z.object({
   lng: z.number().nullable(),
   enabled: z.boolean(),
   values: z.record(z.string(), z.number().nullable()),
+  origin: z.enum(['seed', 'recommended']).optional(),
 });
 
 const configSchema = z.object({
@@ -50,6 +75,10 @@ const configSchema = z.object({
     .object({
       industry: z.string().max(120).optional(),
       brief: z.string().max(2000).optional(),
+      objective: z.string().max(300).optional(),
+      destination: z
+        .object({ iso2: z.string().length(2), name: z.string().min(1).max(120), lat: z.number(), lng: z.number() })
+        .optional(),
     })
     .optional(),
   model: z.enum(['workbook', 'score', 'optimised']).optional(),
@@ -61,9 +90,13 @@ const configSchema = z.object({
       perMarketFrequency: z.record(z.string(), z.number().positive().max(50)).optional(),
       cpmToBudgetRate: z.number().positive().optional(),
       tierGamma: z.number().min(0).max(3).optional(),
+      population: z
+        .object({ values: z.record(z.string(), z.number().positive()), year: z.number().int().optional() })
+        .optional(),
     })
     .optional(),
   concentration: z.number().min(0.25).max(4).optional(),
+  recommendations: recommendationSchema.optional(),
 });
 
 export function validateConfig(

@@ -207,7 +207,7 @@ function optimised(
     const r = rows.get(m.name)!;
     const size = sizeMetric ? num(m.values[sizeMetric.key]) : null;
     const ratio = ratioMetric ? num(m.values[ratioMetric.key]) : null;
-    const pop = num(req.population?.[m.name]);
+    const pop = num(req.population?.[m.name] ?? req.planning?.population?.values[m.name]);
     const audience = size ?? (ratio !== null && pop !== null ? ratio * pop : null);
     const cpmRaw = cpmMetric ? num(m.values[cpmMetric.key]) : null;
     const cpm = cpmRaw !== null ? cpmRaw * rate : null;

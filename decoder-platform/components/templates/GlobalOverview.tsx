@@ -8,12 +8,15 @@ import AllocationList from "@/components/organisms/AllocationList";
 import CultureMatrix from "@/components/organisms/CultureMatrix";
 import { formatMoney } from "@/lib/ui/theme";
 
+import SuggestedMarkets from '@/components/organisms/SuggestedMarkets';
+import type { RecommendationSet } from '@/lib/config/types';
 interface GlobalOverviewProps {
   markets: MarketVm[];
   currency: string;
   allocations: AllocationRow[];
   onSelectCountry: (market: MarketVm) => void;
   onOpenCulture: () => void;
+  recommendations?: RecommendationSet;
 }
 
 export default function GlobalOverview({
@@ -22,6 +25,7 @@ export default function GlobalOverview({
   allocations,
   onSelectCountry,
   onOpenCulture,
+  recommendations,
 }: GlobalOverviewProps) {
   const total = useMemo(() => allocations.reduce((sum, a) => sum + (a.budget || 0), 0), [allocations]);
   const funded = allocations.filter((a) => a.budget > 0).length;
@@ -75,6 +79,8 @@ export default function GlobalOverview({
         </GlassCard>
         </div>
       </div>
+
+      {recommendations && <SuggestedMarkets set={recommendations} markets={markets} onSelect={onSelectCountry} />}
 
       <CultureMatrix markets={markets} onSelectCountry={onSelectCountry} onOpenExplorer={onOpenCulture} />
     </div>

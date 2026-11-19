@@ -1,6 +1,7 @@
 import { MetricDef } from '../model/score';
 import { AllocationModel, FixedAllocation, MarketControl, PlanningSettings, VersionConfig } from '../config/types';
 import { computeAllocation, type AllocationRow as ModelRow } from '../model/allocation';
+import { upgradeLegacyConfig } from '../model/migrate';
 
 export interface MarketVm {
   name: string;
@@ -37,9 +38,15 @@ export interface DashboardVm {
   marketControls?: Record<string, MarketControl>;
   planning?: PlanningSettings;
   concentration?: number;
+  context?: VersionConfig['context'];
+  recommendations?: VersionConfig['recommendations'];
+  /** Markets added from an AI suggestion. */
+  recommendedMarkets: string[];
 }
 
-export function deriveDashboard(config: VersionConfig): DashboardVm {
+export function deriveDashboard(saved: VersionConfig): DashboardVm {
+  // Versions saved before v2 run on the score model with a fitted tier strength.
+  const config = upgradeLegacyConfig(saved);
   const model = computeAllocation({
     model: config.model ?? 'workbook',
     metrics: config.metrics,
@@ -99,6 +106,9 @@ export function deriveDashboard(config: VersionConfig): DashboardVm {
     ...(config.marketControls && { marketControls: config.marketControls }),
     ...(config.planning && { planning: config.planning }),
     ...(config.concentration !== undefined && { concentration: config.concentration }),
+    ...(config.context && { context: config.context }),
+    ...(config.recommendations && { recommendations: config.recommendations }),
+    recommendedMarkets: config.markets.filter((m) => m.origin === 'recommended').map((m) => m.name),
   };
 }
 

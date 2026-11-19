@@ -10,6 +10,9 @@ import Flag from '@/components/atoms/Flag';
 import ShareBar from '@/components/atoms/ShareBar';
 import AnimatedNumber from '@/components/atoms/AnimatedNumber';
 import { formatMoney, relativeShare } from '@/lib/ui/theme';
+import { EXPLAIN } from '@/lib/model/explain';
+import type { AllocationModel, MarketControl } from '@/lib/config/types';
+import type { Uncertainty } from '@/lib/model/uncertainty';
 
 const fmtScore = (v: number) => v.toFixed(2);
 const fmtPct = (v: number) => `${(v * 100).toFixed(1)}%`;
@@ -22,7 +25,14 @@ interface BudgetTableProps {
   currency: string;
   enabledNames: Set<string>;
   onToggleMarket: (name: string) => void;
+  model?: AllocationModel;
+  ranges?: Uncertainty['ranges'];
+  recommended?: Set<string>;
+  controls?: Record<string, MarketControl>;
 }
+
+const escapeHtml = (v: string) =>
+  v.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 
 export default function BudgetTable({
   markets,
@@ -32,7 +42,12 @@ export default function BudgetTable({
   currency,
   enabledNames,
   onToggleMarket,
+  model = 'workbook',
+  ranges,
+  recommended,
+  controls,
 }: BudgetTableProps) {
+  const v2 = model !== 'workbook';
   const allocationMap = new Map(allocations?.map((a) => [a.name, a]));
 
   const rows = markets.map((market) => {
@@ -44,6 +59,7 @@ export default function BudgetTable({
       split: alloc?.split ?? 0,
       budget: alloc?.budget ?? 0,
       score: alloc?.score ?? 0,
+      detail: alloc?.detail,
     };
   });
 
@@ -55,6 +71,8 @@ export default function BudgetTable({
 
   const maxSplit = Math.max(0, ...sorted.map((r) => (r.enabled ? r.split : 0)));
   const fmtBudget = (v: number) => formatMoney(currency, v);
+  const fmtCompact = (v: number) =>
+    v >= 1e6 ? `${+(v / 1e6).toFixed(2)}M` : v >= 1e3 ? `${Math.round(v / 1e3)}k` : String(Math.round(v));
   const activeCount = sorted.filter((r) => r.enabled).length;
   // The pinned Market column only gets its own material once columns slide
   // under it; at rest it must read as part of the card.
@@ -91,9 +109,37 @@ export default function BudgetTable({
               <th className={`${pinned} px-3 py-3 text-left align-bottom text-[11.5px] font-medium text-ink-2`}>
                 Market
               </th>
-              <th className={`${headerCell} min-w-[150px]`}>% Split</th>
-              <th className={headerCell}>Budget ({currency})</th>
-              <th className={headerCell}>Weighted score</th>
+              <th className={`${headerCell} min-w-[150px]`}>
+                <span className="inline-flex items-center gap-1">% Split <MetricInfo metric={EXPLAIN.share} /></span>
+              </th>
+              <th className={headerCell}>
+                <span className="inline-flex items-center gap-1">Budget ({currency}) <MetricInfo metric={EXPLAIN.budget} /></span>
+              </th>
+              {ranges && (
+                <th className={headerCell}>
+                  <span className="inline-flex items-center gap-1">Likely range <MetricInfo metric={EXPLAIN.range} /></span>
+                </th>
+              )}
+              {v2 ? (
+                <>
+                  <th className={headerCell}>
+                    <span className="inline-flex items-center gap-1">Quality <MetricInfo metric={EXPLAIN.quality} /></span>
+                  </th>
+                  <th className={headerCell}>
+                    <span className="inline-flex items-center gap-1">Coverage <MetricInfo metric={EXPLAIN.coverage} /></span>
+                  </th>
+                  <th className={headerCell}>
+                    <span className="inline-flex items-center gap-1">Priority <MetricInfo metric={EXPLAIN.priority} /></span>
+                  </th>
+                  {model === 'optimised' && (
+                    <th className={headerCell}>
+                      <span className="inline-flex items-center gap-1">Reached <MetricInfo metric={EXPLAIN.reach} /></span>
+                    </th>
+                  )}
+                </>
+              ) : (
+                <th className={headerCell}>Weighted score</th>
+              )}
               {metrics.map((metric) => (
                 <th key={metric.key} className={headerCell}>
                   <span className="inline-flex items-center gap-1">
@@ -126,6 +172,15 @@ export default function BudgetTable({
                     <span className="flex items-center gap-2.5">
                       <Flag iso2={row.market.iso2} name={row.market.name} size="sm" />
                       <span className="whitespace-nowrap font-medium text-ink">{row.market.name}</span>
+                      {recommended?.has(row.market.name) && (
+                        <span
+                          className="rounded-full bg-accent/10 px-1.5 py-px text-[10px] font-semibold text-accent"
+                          data-tooltip-id="metric-tooltip"
+                          data-tooltip-content="Added from an AI market suggestion"
+                        >
+                          AI
+                        </span>
+                      )}
                     </span>
                   </td>
                   <td className={`${cell} text-right`}>
@@ -139,9 +194,60 @@ export default function BudgetTable({
                   <td className={`${numericCell} font-semibold`}>
                     {row.enabled ? <AnimatedNumber value={row.budget} format={fmtBudget} /> : '—'}
                   </td>
-                  <td className={numericCell}>
-                    {row.enabled ? <AnimatedNumber value={row.score} format={fmtScore} /> : '—'}
-                  </td>
+                  {ranges && (
+                    <td className={`${numericCell} text-ink-2`}>
+                      {row.enabled && ranges[row.market.name] ? (
+                        <span
+                          data-tooltip-id="metric-tooltip"
+                          data-tooltip-content={`Keeps its rank (±1) in ${Math.round(ranges[row.market.name].rankStability * 100)}% of simulated plans`}
+                        >
+                          {fmtCompact(ranges[row.market.name].p10)}–{fmtCompact(ranges[row.market.name].p90)}
+                        </span>
+                      ) : (
+                        '—'
+                      )}
+                    </td>
+                  )}
+                  {v2 ? (
+                    <>
+                      <td className={numericCell}>{row.enabled && row.detail ? fmtScore(row.detail.quality) : '—'}</td>
+                      <td className={`${numericCell} ${row.detail && row.detail.coverage < 1 ? 'text-amber-700' : ''}`}>
+                        {row.detail ? `${Math.round(row.detail.coverage * 100)}%` : '—'}
+                      </td>
+                      <td className={numericCell}>
+                        {row.detail ? (
+                          controls?.[row.market.name]?.reason ? (
+                            <span
+                              className="underline decoration-dotted underline-offset-2"
+                              data-tooltip-id="metric-tooltip"
+                              data-tooltip-html={`<div style="max-width:240px">${escapeHtml(controls[row.market.name].reason!)}</div>`}
+                            >
+                              {+row.detail.priority.toFixed(2)}×
+                            </span>
+                          ) : (
+                            `${+row.detail.priority.toFixed(2)}×`
+                          )
+                        ) : (
+                          '—'
+                        )}
+                      </td>
+                      {model === 'optimised' && (
+                        <td className={numericCell}>
+                          {row.enabled && row.detail?.reach !== undefined ? (
+                            <span data-tooltip-id="metric-tooltip" data-tooltip-content={`${Math.round((row.detail.saturation ?? 0) * 100)}% of the audience reached`}>
+                              {fmt(Math.round(row.detail.reach))}
+                            </span>
+                          ) : (
+                            '—'
+                          )}
+                        </td>
+                      )}
+                    </>
+                  ) : (
+                    <td className={numericCell}>
+                      {row.enabled ? <AnimatedNumber value={row.score} format={fmtScore} /> : '—'}
+                    </td>
+                  )}
                   {metrics.map((metric) => (
                     <td key={metric.key} className={`${numericCell} ${off ? '' : 'text-ink-2'}`}>
                       {fmt(row.market.values[metric.key] ?? null)}

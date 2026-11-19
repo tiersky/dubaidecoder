@@ -3,7 +3,9 @@ import { deriveDashboard, computeAllocations } from './derive';
 import { egyptMetrics, egyptMarkets, egyptExpected } from '../model/fixtures/egypt-week6';
 import type { VersionConfig } from '../config/types';
 
+// These tests pin the workbook formula; unset-model versions are covered below.
 const config: VersionConfig = {
+  model: 'workbook',
   name: 'Egypt Decoder',
   slug: 'egypt',
   currency: 'USD',
@@ -86,5 +88,26 @@ describe('fixed allocation', () => {
     expect(rows[0].budget).toBe(first.enabled ? 1000000 : 0);
     const total = rows.reduce((a, r) => a + r.budget, 0);
     expect(total).toBeCloseTo(14000000, 3);
+  });
+});
+
+describe('legacy versions (no model set)', () => {
+  const { model: _m, ...legacy } = config;
+  void _m;
+  const vm = deriveDashboard(legacy);
+
+  it('run on the score model with a fitted tier strength, close to the workbook split', () => {
+    expect(vm.model).toBe('score');
+    expect(vm.metrics.find((m) => /tier/i.test(m.label))?.role).toBe('priority');
+    expect(vm.planning?.tierGamma).toBeGreaterThan(0);
+    const old = deriveDashboard(config);
+    const oldSplit = new Map(old.markets.map((m) => [m.name, m.split]));
+    const worst = Math.max(...vm.markets.map((m) => Math.abs(m.split - oldSplit.get(m.name)!)));
+    expect(worst).toBeLessThan(0.025);
+    expect(vm.markets.reduce((a, m) => a + m.split, 0)).toBeCloseTo(1, 9);
+  });
+
+  it('leave a version that names its model untouched', () => {
+    expect(deriveDashboard(config).model).toBe('workbook');
   });
 });
