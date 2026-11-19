@@ -107,6 +107,7 @@ export function StepBasics({ state, update, universe }: StepProps) {
                 <Flag iso2={m.iso2} name={m.name} />
                 {m.name}
                 {m.origin === 'recommended' && <Pill tone="accent">AI</Pill>}
+                {m.enabled === false && <Pill>off</Pill>}
                 <button
                   type="button"
                   aria-label={`Remove ${m.name}`}
@@ -639,6 +640,7 @@ export function StepReview({ state, update, universe }: StepProps) {
             items={[
               ...(optimisable ? [{ id: 'optimised', label: 'Optimised' }] : []),
               { id: 'score', label: 'Score-weighted' },
+              ...(state.extras.allocation ? [{ id: 'workbook', label: 'Workbook' }] : []),
             ]}
           />
         }

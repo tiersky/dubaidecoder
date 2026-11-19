@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { buildConfig, emptyState, effectiveModel, resolveValue, stateFromConfig, type BuilderState, type UniverseLookup } from './build';
+import { buildConfig, emptyState, effectiveModel, mergeRecommendations, MAX_RECOMMENDATIONS, resolveValue, stateFromConfig, type BuilderState, type UniverseLookup } from './build';
+import type { RecommendationItem } from '@/lib/config/types';
 import { CATALOG, catalogById, canOptimise, metricFromCatalog } from './catalog';
 import { validateConfig } from '@/lib/config/validate';
 import { egyptMarkets, egyptMetrics } from '@/lib/model/fixtures/egypt-week6';
@@ -116,5 +117,57 @@ describe('previewAllocation', () => {
     const base = previewAllocation({ ...config, marketControls: undefined });
     const de = (x: typeof r) => x.rows.find((row) => row.name === 'Germany')!.budget;
     expect(de(r)).toBeGreaterThan(de(base));
+  });
+});
+
+describe('review fixes: editing an existing version in the builder', () => {
+  const wb = {
+    name: 'Egypt',
+    slug: 'egypt',
+    currency: 'USD',
+    defaultBudget: 1e6,
+    metrics: egyptMetrics,
+    markets: egyptMarkets.map((m, i) => ({ ...m, iso2: null, lat: null, lng: null, enabled: i !== 1 })),
+    marketControls: { [egyptMarkets[0].name]: { lock: 200000, priority: 1.5, reason: 'Office' }, [egyptMarkets[2].name]: { min: 50000 } },
+  };
+
+  it('keeps switched-off markets, locks and bounds', () => {
+    const out = buildConfig(stateFromConfig(wb), uni).config;
+    expect(out.markets[1].enabled).toBe(false);
+    expect(out.markets.filter((m) => !m.enabled)).toHaveLength(1);
+    expect(out.marketControls?.[egyptMarkets[0].name]).toEqual({ lock: 200000, priority: 1.5, reason: 'Office' });
+    expect(out.marketControls?.[egyptMarkets[2].name]).toEqual({ min: 50000 });
+  });
+
+  it('converts a legacy version the same way the dashboard does', async () => {
+    const { upgradeLegacyConfig } = await import('@/lib/model/migrate');
+    const out = buildConfig(stateFromConfig(wb), uni).config;
+    const up = upgradeLegacyConfig(wb);
+    expect(out.model).toBe('score');
+    expect(out.metrics.map((m) => m.role)).toEqual(up.metrics.map((m) => m.role));
+    expect(out.planning?.tierGamma).toBe(up.planning?.tierGamma);
+  });
+
+  it('changing a priority back to 1× keeps the lock', () => {
+    const s = stateFromConfig(wb);
+    s.priorities[s.markets[0].key] = { priority: 1, reason: '' };
+    expect(buildConfig(s, uni).config.marketControls?.[egyptMarkets[0].name]).toEqual({ lock: 200000 });
+  });
+});
+
+describe('mergeRecommendations', () => {
+  const item = (iso2: string, status: RecommendationItem['status']): RecommendationItem => ({
+    iso2, name: iso2, fit: 50, lookalike: 50, closestSeed: null, headline: 'h', reasons: ['r'], risks: [], status,
+  });
+  it('never exceeds the cap, keeps every inclusion and the newest exclusions', () => {
+    const included = ['aa', 'ab', 'ac'].map((c) => item(c, 'included'));
+    const excluded = Array.from({ length: 60 }, (_, i) => item(`x${i}`, 'excluded'));
+    const fresh = Array.from({ length: 12 }, (_, i) => item(`f${i}`, 'suggested'));
+    const out = mergeRecommendations([...included, ...excluded], fresh);
+    expect(out).toHaveLength(MAX_RECOMMENDATIONS);
+    expect(out.filter((i) => i.status === 'included')).toHaveLength(3);
+    expect(out.filter((i) => i.status === 'suggested')).toHaveLength(12);
+    expect(out.at(-1)!.iso2).toBe('x59');
+    expect(new Set(out.map((i) => i.iso2)).size).toBe(out.length);
   });
 });

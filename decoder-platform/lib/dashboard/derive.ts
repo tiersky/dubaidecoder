@@ -44,16 +44,26 @@ export interface DashboardVm {
   recommendedMarkets: string[];
 }
 
+/**
+ * The markets v2 statistics are measured within: the version's allocation
+ * list (default: all markets), minus any market switched off. Every view uses
+ * this, so a market reads the same on the Overview and the Budget tab.
+ */
+export function statsUniverse(allNames: string[], universe: string[] | undefined, enabled: Set<string>): Set<string> {
+  return new Set((universe ?? allNames).filter((n) => enabled.has(n)));
+}
+
 export function deriveDashboard(saved: VersionConfig): DashboardVm {
   // Versions saved before v2 run on the score model with a fitted tier strength.
   const config = upgradeLegacyConfig(saved);
+  const enabled = new Set(config.markets.filter((m) => m.enabled).map((m) => m.name));
   const model = computeAllocation({
     model: config.model ?? 'workbook',
     metrics: config.metrics,
     markets: config.markets,
     budget: config.defaultBudget,
-    funded: new Set(config.markets.filter((m) => m.enabled).map((m) => m.name)),
-    ...(config.universe && { universe: new Set(config.universe) }),
+    funded: enabled,
+    universe: statsUniverse(config.markets.map((m) => m.name), config.universe, enabled),
     allocation: config.allocation,
     controls: config.marketControls,
     planning: config.planning,
@@ -146,15 +156,19 @@ export function computeAllocations(
     markets,
     budget: totalBudget,
     funded: enabledNames,
-    ...(v2.universe && { universe: new Set(v2.universe) }),
+    universe: statsUniverse(markets.map((m) => m.name), v2.universe, enabledNames),
     allocation,
     controls: v2.controls,
     planning: v2.planning,
     concentration: v2.concentration,
     population: v2.population,
   });
+  return toAllocationRows(result.rows, markets);
+}
+
+export function toAllocationRows(rows: ModelRow[], markets: Pick<MarketVm, 'name' | 'iso2'>[]): AllocationRow[] {
   const geo = new Map(markets.map((m) => [m.name, m.iso2]));
-  return result.rows.map((r) => ({
+  return rows.map((r) => ({
     name: r.name,
     iso2: geo.get(r.name) ?? null,
     score: r.score,

@@ -125,7 +125,15 @@ function v2(req: AllocationRequest): AllocationResult {
   const priorities = priorityFor(req);
   const funded = req.markets.filter((m) => universe.has(m.name) && req.funded.has(m.name));
 
-  const lockOf = (name: string): number | undefined => req.controls?.[name]?.lock ?? req.allocation?.fixed[name];
+  // Workbook fixed amounts act as locks, but like the workbook they scale to the
+  // budget when they alone exceed it or nothing else is left to absorb the rest.
+  const fixed = req.allocation?.fixed ?? {};
+  const fixedFunded = funded.filter((m) => req.controls?.[m.name]?.lock === undefined && fixed[m.name] !== undefined);
+  const fixedSum = fixedFunded.reduce((a, m) => a + fixed[m.name], 0);
+  const free = funded.some((m) => req.controls?.[m.name]?.lock === undefined && fixed[m.name] === undefined);
+  const fixedScale = fixedSum > 0 && (req.budget <= fixedSum || !free) ? req.budget / fixedSum : 1;
+  const lockOf = (name: string): number | undefined =>
+    req.controls?.[name]?.lock ?? (fixed[name] !== undefined ? fixed[name] * fixedScale : undefined);
   const boundsOf = (name: string): Bounds => {
     const lock = lockOf(name);
     if (lock !== undefined) return { min: lock, max: lock };

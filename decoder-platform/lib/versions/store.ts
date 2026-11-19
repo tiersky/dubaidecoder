@@ -1,5 +1,5 @@
 import { AllocationModel, VersionConfig } from '../config/types';
-import { upgradeLegacyConfig } from '../model/migrate';
+import { withModel } from '../model/migrate';
 import { canOptimise } from '../builder/catalog';
 import { normalizeContext } from '../admin/upload-core';
 import { validateConfig } from '../config/validate';
@@ -218,13 +218,11 @@ export async function applyTweaks(
   const config = await getPublishedConfig(slug);
   if (!config) throw new Error(`no published version for "${slug}"`);
   let next: VersionConfig = structuredClone(config);
-  if (tweaks.model !== undefined && tweaks.model !== (config.model ?? 'workbook')) {
-    // Leaving the workbook model: adopt the suggested metric settings and fitted tier strength first.
-    if (!config.model && tweaks.model !== 'workbook') next = upgradeLegacyConfig(next);
-    if (tweaks.model === 'optimised' && !canOptimise(next.metrics)) {
+  if (tweaks.model !== undefined) {
+    next = structuredClone(withModel(next, tweaks.model));
+    if (next.model === 'optimised' && !canOptimise(next.metrics)) {
       throw new Error('the optimised model needs an audience metric and a CPM metric');
     }
-    next.model = tweaks.model;
   }
   if (tweaks.defaultBudget !== undefined) next.defaultBudget = tweaks.defaultBudget;
   if (tweaks.currency !== undefined) next.currency = tweaks.currency;

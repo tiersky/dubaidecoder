@@ -9,7 +9,16 @@ import type { AdminActionState } from '../../actions';
 
 const initialState: AdminActionState = {};
 
-export function TweaksForm({ slug, config }: { slug: string; config: VersionConfig }) {
+export function TweaksForm({
+  slug,
+  config,
+  effectiveModel,
+}: {
+  slug: string;
+  config: VersionConfig;
+  /** The model the dashboard actually runs (legacy versions are upgraded at render). */
+  effectiveModel: NonNullable<VersionConfig['model']>;
+}) {
   const [state, formAction, pending] = useActionState(applyTweaksAction, initialState);
 
   return (
@@ -57,7 +66,7 @@ export function TweaksForm({ slug, config }: { slug: string; config: VersionConf
             <select
               id="model"
               name="model"
-              defaultValue={config.model ?? 'score'}
+              defaultValue={effectiveModel}
               className="glass-input mt-1 w-full rounded-lg px-3 py-2 text-sm text-slate-800"
             >
               <option value="optimised">Optimised for reach (needs audience and CPM metrics)</option>
@@ -65,7 +74,8 @@ export function TweaksForm({ slug, config }: { slug: string; config: VersionConf
               <option value="workbook">Workbook formula (exact spreadsheet match)</option>
             </select>
             <p className="mt-1 text-xs text-slate-500">
-              Versions saved before the new model run as score-weighted, with the Market Tier as priority.
+              Versions saved before the new model run as score-weighted, with the Market Tier as priority, unless
+              they use a fixed workbook split.
             </p>
           </div>
           <ContextFields context={config.context} />

@@ -104,21 +104,44 @@ export function fitTierGamma(input: {
  * Moves a version with no model set (every workbook upload so far) onto the
  * v2 score model: suggested metric settings, and γ fitted so budgets stay
  * close to the workbook's. A version that names its model is left alone.
+ * Memoised per config object: the fit runs ~200 allocations.
  */
 export function upgradeLegacyConfig(config: VersionConfig): VersionConfig {
   if (config.model) return config;
+  // A workbook fixed split (amounts or shares) has no v2 equivalent: keep the workbook formula.
+  if (config.allocation && (Object.keys(config.allocation.fixed).length || Object.keys(config.allocation.shares).length)) {
+    return { ...config, model: 'workbook' };
+  }
   const v2Metrics = suggestMetricSettings(config.metrics, config.markets);
-  const fit = fitTierGamma({
-    metrics: config.metrics,
-    v2Metrics,
-    markets: config.markets,
-    budget: config.defaultBudget,
-    allocation: config.allocation,
-  });
+  const fit = cachedFit(config, v2Metrics);
   return {
     ...config,
     model: 'score',
     metrics: v2Metrics,
     planning: { ...config.planning, ...(fit && config.planning?.tierGamma === undefined && { tierGamma: fit.gamma }) },
   };
+}
+
+// The γ fit runs ~200 allocations; dashboards re-derive on every request, so
+// remember recent fits by their inputs (results are plain numbers: safe to share).
+const fitCache = new Map<string, TierFit | null>();
+
+function cachedFit(config: VersionConfig, v2Metrics: MetricDef[]): TierFit | null {
+  const key = JSON.stringify([config.metrics, config.markets, config.defaultBudget]);
+  if (fitCache.has(key)) return fitCache.get(key)!;
+  const fit = fitTierGamma({ metrics: config.metrics, v2Metrics, markets: config.markets, budget: config.defaultBudget });
+  fitCache.set(key, fit);
+  if (fitCache.size > 50) fitCache.delete(fitCache.keys().next().value!);
+  return fit;
+}
+
+/**
+ * The config with an admin-chosen model. Leaving an unset (legacy) model for
+ * v2 adopts the suggested metric settings and fitted tier strength first;
+ * choosing 'workbook' on a legacy version pins it so it stops being upgraded.
+ */
+export function withModel(config: VersionConfig, model: NonNullable<VersionConfig['model']>): VersionConfig {
+  if (model === config.model) return config;
+  const base = !config.model && model !== 'workbook' ? upgradeLegacyConfig(config) : config;
+  return { ...base, model };
 }

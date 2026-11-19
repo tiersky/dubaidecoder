@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useState, useTransition } from 'react'
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Tooltip } from 'react-tooltip';
-import type { BuilderState } from '@/lib/builder/build';
+import { mergeRecommendations, type BuilderState } from '@/lib/builder/build';
 import { CATALOG, metricFromCatalog } from '@/lib/builder/catalog';
 import type { RecommendationSet } from '@/lib/config/types';
 import type { Universe as UniversePayload } from '@/lib/recommend/universe';
@@ -101,8 +101,7 @@ export default function Builder({ initial, resumeLocal }: { initial: BuilderStat
       setState((s) => {
         // Keep earlier decisions: included and excluded items stay with their status.
         const kept = s.recommendations?.items.filter((i) => i.status !== 'suggested') ?? [];
-        const keptIso = new Set(kept.map((i) => i.iso2));
-        return { ...s, recommendations: { ...fresh, items: [...fresh.items.filter((i) => !keptIso.has(i.iso2)), ...kept] } };
+        return { ...s, recommendations: { ...fresh, items: mergeRecommendations(kept, fresh.items) } };
       });
       if (body.aiError) setRecError(body.aiError === 'not-configured' ? null : 'The AI didn’t answer, so these are lookalikes only. Try again for a full reading.');
     } catch (e) {

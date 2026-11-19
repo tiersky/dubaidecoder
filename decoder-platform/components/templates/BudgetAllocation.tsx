@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo, useCallback, useDeferredValue } from 'react';
-import { DashboardVm, computeAllocations } from '@/lib/dashboard/derive';
+import { DashboardVm, statsUniverse, toAllocationRows } from '@/lib/dashboard/derive';
 import { computeAllocation, type AllocationRequest } from '@/lib/model/allocation';
 import { nextIncrement, simulateAllocation } from '@/lib/model/uncertainty';
 import ModelExplainer from '@/components/organisms/ModelExplainer';
@@ -46,24 +46,12 @@ export default function BudgetAllocation({ vm }: BudgetAllocationProps) {
   );
 
   // Toggling a market changes the allocation country list: v2 statistics are
-  // recomputed as if it had never been in the list.
+  // recomputed as if it had never been in the list (same rule as every view).
   const universe = useMemo(
-    () => (vm.universe ?? vm.markets.map((m) => m.name)).filter((n) => enabledNames.has(n)),
+    () => statsUniverse(vm.markets.map((m) => m.name), vm.universe, enabledNames),
     [vm.universe, vm.markets, enabledNames]
   );
   const v2 = vm.model !== 'workbook';
-  const allocations = useMemo(
-    () =>
-      computeAllocations(vm.markets, vm.metrics, weights, enabledNames, totalBudget, vm.allocation, {
-        model: vm.model,
-        ...(v2 && { universe }),
-        controls: vm.marketControls,
-        planning: vm.planning,
-        concentration: vm.concentration,
-      }),
-    [vm, weights, enabledNames, totalBudget, universe, v2]
-  );
-
   const request: AllocationRequest = useMemo(
     () => ({
       model: vm.model,
@@ -71,24 +59,27 @@ export default function BudgetAllocation({ vm }: BudgetAllocationProps) {
       markets: vm.markets,
       budget: totalBudget,
       funded: enabledNames,
-      ...(v2 && { universe: new Set(universe) }),
+      universe,
       allocation: vm.allocation,
       controls: vm.marketControls,
       planning: vm.planning,
       concentration: vm.concentration,
     }),
-    [vm, weights, totalBudget, enabledNames, universe, v2]
+    [vm, weights, totalBudget, enabledNames, universe]
   );
+  // One allocation feeds the table, treemap, chart and warnings.
+  const result = useMemo(() => computeAllocation(request), [request]);
+  const allocations = useMemo(() => toAllocationRows(result.rows, vm.markets), [result, vm.markets]);
+  const warnings = v2 ? result.warnings : [];
   // The simulation trails slider drags instead of blocking them.
   const deferred = useDeferredValue(request);
-  const uncertainty = useMemo(() => (v2 && deferred.budget > 0 ? simulateAllocation(deferred, 400) : null), [deferred, v2]);
+  const uncertainty = useMemo(() => (v2 && deferred.budget > 0 ? simulateAllocation(deferred, deferred.markets.length > 25 ? 200 : 400) : null), [deferred, v2]);
   const step = useMemo(() => {
     const raw = totalBudget * 0.05;
     const mag = 10 ** Math.floor(Math.log10(Math.max(raw, 1)));
     return Math.max(mag, Math.round(raw / mag) * mag);
   }, [totalBudget]);
   const next = useMemo(() => (deferred.budget > 0 ? nextIncrement(deferred, step) : []), [deferred, step]);
-  const warnings = useMemo(() => (v2 ? computeAllocation(deferred).warnings : []), [deferred, v2]);
   const recommended = useMemo(() => new Set(vm.recommendedMarkets), [vm.recommendedMarkets]);
 
   return (

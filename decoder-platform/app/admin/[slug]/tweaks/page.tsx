@@ -2,6 +2,7 @@ import { redirect, notFound } from 'next/navigation';
 import { getAccess } from '@/lib/auth/require';
 import { getPublishedConfig } from '@/lib/versions/store';
 import { TweaksForm } from './tweaks-form';
+import { upgradeLegacyConfig } from '@/lib/model/migrate';
 
 export const dynamic = 'force-dynamic';
 
@@ -20,7 +21,7 @@ export default async function TweaksPage({
   return (
     <main className="min-h-screen p-6">
       <div className="mx-auto max-w-3xl">
-        <TweaksForm slug={slug} config={config} />
+        <TweaksForm slug={slug} config={config} effectiveModel={upgradeLegacyConfig(config).model ?? 'workbook'} />
       </div>
     </main>
   );

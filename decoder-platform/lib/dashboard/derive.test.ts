@@ -111,3 +111,25 @@ describe('legacy versions (no model set)', () => {
     expect(deriveDashboard(config).model).toBe('workbook');
   });
 });
+
+describe('one statistics universe across views', () => {
+  it('the Overview rows match the dashboard view model when markets are switched off', () => {
+    const { model: _m, ...legacy } = config;
+    void _m;
+    const off = { ...legacy, markets: legacy.markets.map((m, i) => (i < 2 ? { ...m, enabled: false } : m)) };
+    const vm = deriveDashboard(off);
+    const enabled = new Set(vm.markets.filter((m) => m.enabled).map((m) => m.name));
+    const rows = computeAllocations(vm.markets, vm.metrics, vm.defaultWeights, enabled, vm.defaultBudget, vm.allocation, {
+      model: vm.model,
+      universe: vm.universe,
+      controls: vm.marketControls,
+      planning: vm.planning,
+    });
+    for (const m of vm.markets) expect(rows.find((r) => r.name === m.name)!.split).toBeCloseTo(m.split, 12);
+    // Switched-off markets are out of the comparison set, so they don't move the others.
+    // Same converted settings (the γ fit and log choices depend on the market list).
+    const pinned = { ...off, model: vm.model, metrics: vm.metrics, planning: vm.planning };
+    const without = deriveDashboard({ ...pinned, markets: off.markets.slice(2) });
+    for (const m of without.markets) expect(vm.markets.find((x) => x.name === m.name)!.split).toBeCloseTo(m.split, 12);
+  });
+});

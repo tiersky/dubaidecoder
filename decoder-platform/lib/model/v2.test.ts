@@ -287,3 +287,37 @@ describe('migration', () => {
     expect(fit.rms).toBeLessThan(fit.rmsWithoutTier);
   });
 });
+
+describe('review fixes: workbook fixed splits and legacy versions', () => {
+  it('workbook fixed amounts scale to the budget in v2 instead of failing', async () => {
+    const { computeAllocation } = await import('./allocation');
+    const metrics = suggestMetricSettings(egyptMetrics, egyptMarkets);
+    const names = egyptMarkets.slice(0, 3).map((m) => m.name);
+    const fixed = { [names[0]]: 300_000, [names[1]]: 100_000, [names[2]]: 100_000 };
+    const r = computeAllocation({
+      model: 'score',
+      metrics,
+      markets: egyptMarkets,
+      budget: 1_000_000,
+      funded: new Set(names),
+      allocation: { fixed, shares: {} },
+    });
+    expect(r.error).toBeUndefined();
+    const b = (n: string) => r.rows.find((x) => x.name === n)!.budget;
+    expect(b(names[0]) + b(names[1]) + b(names[2])).toBeCloseTo(1_000_000, 0);
+    expect(b(names[0]) / b(names[1])).toBeCloseTo(3, 6);
+  });
+
+  it('legacy versions with a fixed split stay on the workbook formula; withModel pins a chosen model', async () => {
+    const { upgradeLegacyConfig, withModel } = await import('./migrate');
+    const base = { name: 'E', slug: 'e', currency: 'USD', defaultBudget: 1e6, metrics: egyptMetrics, markets: egyptMarkets.map((m) => ({ ...m, iso2: null, lat: null, lng: null })) };
+    const withShares = { ...base, allocation: { fixed: {}, shares: { [egyptMarkets[0].name]: 1 } } };
+    expect(upgradeLegacyConfig(withShares).model).toBe('workbook');
+    expect(upgradeLegacyConfig(base).model).toBe('score');
+    expect(withModel(base, 'workbook').model).toBe('workbook');
+    expect(upgradeLegacyConfig(withModel(base, 'workbook')).model).toBe('workbook');
+    const scored = withModel(base, 'score');
+    expect(scored.metrics.some((m) => m.role === 'priority')).toBe(true);
+    expect(scored.planning?.tierGamma).toBeGreaterThan(0);
+  });
+});

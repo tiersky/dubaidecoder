@@ -175,9 +175,6 @@ function editsFromForm(formData: FormData, config: VersionConfig): DraftEdits {
     currency: String(formData.get('currency') ?? '') || undefined,
     defaultBudget: Number(formData.get('defaultBudget')) || undefined,
     context: contextFromForm(formData),
-    ...(['workbook', 'score', 'optimised'].includes(String(formData.get('model')))
-      ? { model: String(formData.get('model')) as TweakInput['model'] }
-      : {}),
     weights: {},
     directions: {},
     labels: {},

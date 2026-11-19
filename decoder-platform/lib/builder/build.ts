@@ -8,6 +8,7 @@ import type { FactKey, FactValue } from '@/lib/insights/facts';
 import type { MetricDef } from '@/lib/model/score';
 import { canOptimise } from './catalog';
 import { computeAllocation } from '@/lib/model/allocation';
+import { upgradeLegacyConfig } from '@/lib/model/migrate';
 
 export interface BuilderMarket {
   /** iso2 when known, otherwise `name:<name>` (workbook markets without a pin). */
@@ -17,6 +18,8 @@ export interface BuilderMarket {
   lat: number | null;
   lng: number | null;
   origin: 'seed' | 'recommended';
+  /** Funded by default; false keeps a market listed but switched off. Default true. */
+  enabled?: boolean;
 }
 
 export interface BuilderState {
@@ -40,7 +43,7 @@ export interface BuilderState {
   priorities: Record<string, { priority: number; reason: string }>;
   model: AllocationModel;
   /** Settings carried over unchanged when editing an existing version. */
-  extras: Pick<VersionConfig, 'allocation' | 'universe' | 'planning' | 'concentration'>;
+  extras: Pick<VersionConfig, 'allocation' | 'universe' | 'planning' | 'concentration' | 'marketControls'>;
 }
 
 export interface UniverseLookup {
@@ -130,7 +133,7 @@ export function buildConfig(state: BuilderState, uni: UniverseLookup): BuildResu
       values[metric.key] = r.value;
       if (r.value === null) missing.push({ market: m.name, metric: metric.label });
     }
-    return { name: m.name, iso2: m.iso2, lat: m.lat, lng: m.lng, enabled: true, values, origin: m.origin };
+    return { name: m.name, iso2: m.iso2, lat: m.lat, lng: m.lng, enabled: m.enabled ?? true, values, origin: m.origin };
   });
 
   const population: Record<string, number> = {};
@@ -145,12 +148,19 @@ export function buildConfig(state: BuilderState, uni: UniverseLookup): BuildResu
     }
   }
 
+  // Priority and reason are edited here; locks and bounds set elsewhere are kept.
   const controls: NonNullable<VersionConfig['marketControls']> = {};
   for (const m of state.markets) {
+    const { priority: _p, reason: _r, ...kept } = state.extras.marketControls?.[m.name] ?? {};
+    void _p;
+    void _r;
     const p = state.priorities[m.key];
-    if (p && (p.priority !== 1 || p.reason.trim())) {
-      controls[m.name] = { priority: p.priority, ...(p.reason.trim() && { reason: p.reason.trim() }) };
-    }
+    const c = {
+      ...kept,
+      ...(p && p.priority !== 1 && { priority: p.priority }),
+      ...(p?.reason.trim() && { reason: p.reason.trim() }),
+    };
+    if (Object.keys(c).length) controls[m.name] = c;
   }
 
   const context: VersionContext = {
@@ -185,7 +195,9 @@ export function buildConfig(state: BuilderState, uni: UniverseLookup): BuildResu
 }
 
 /** Opens any saved version (guided or from a workbook) in the builder. */
-export function stateFromConfig(config: VersionConfig): BuilderState {
+export function stateFromConfig(saved: VersionConfig): BuilderState {
+  // Same conversion the dashboard applies, so editing doesn't change the plan.
+  const config = upgradeLegacyConfig(saved);
   const markets: BuilderMarket[] = config.markets.map((m) => ({
     key: marketKey(m),
     name: m.name,
@@ -193,6 +205,7 @@ export function stateFromConfig(config: VersionConfig): BuilderState {
     lat: m.lat,
     lng: m.lng,
     origin: m.origin ?? 'seed',
+    ...(!m.enabled && { enabled: false }),
   }));
   const metrics = config.metrics.map((m) => (m.provider ? m : { ...m, provider: 'manual' }));
   const values: BuilderState['values'] = {};
@@ -211,7 +224,7 @@ export function stateFromConfig(config: VersionConfig): BuilderState {
     const c = config.marketControls?.[m.name];
     if (c?.priority !== undefined || c?.reason) priorities[m.key] = { priority: c.priority ?? 1, reason: c.reason ?? '' };
   }
-  const { allocation, universe, planning, concentration } = config;
+  const { allocation, universe, planning, concentration, marketControls } = config;
   return {
     v: 1,
     mode: 'edit',
@@ -229,12 +242,13 @@ export function stateFromConfig(config: VersionConfig): BuilderState {
     values,
     snapshot,
     priorities,
-    model: config.model ?? 'score',
+    model: config.model ?? 'workbook',
     extras: {
       ...(allocation && { allocation }),
       ...(universe && { universe }),
       ...(planning && { planning }),
       ...(concentration !== undefined && { concentration }),
+      ...(marketControls && { marketControls }),
     },
   };
 }
@@ -242,7 +256,7 @@ export function stateFromConfig(config: VersionConfig): BuilderState {
 /** The allocation the saved config will produce at its default budget. */
 export function previewAllocation(config: VersionConfig, budget = config.defaultBudget) {
   return computeAllocation({
-    model: config.model ?? 'score',
+    model: config.model ?? 'workbook',
     metrics: config.metrics,
     markets: config.markets,
     budget,
@@ -253,4 +267,26 @@ export function previewAllocation(config: VersionConfig, budget = config.default
     ...(config.planning && { planning: config.planning }),
     ...(config.concentration !== undefined && { concentration: config.concentration }),
   });
+}
+
+/** Most items a saved recommendation set may hold (the config schema's cap). */
+export const MAX_RECOMMENDATIONS = 40;
+
+/**
+ * Combines a fresh suggestion run with earlier decisions. Included items are
+ * always kept, then new suggestions, then exclusions (newest decisions are
+ * what stops them being suggested again), capped at MAX_RECOMMENDATIONS.
+ */
+export function mergeRecommendations(
+  decided: RecommendationSet['items'],
+  fresh: RecommendationSet['items']
+): RecommendationSet['items'] {
+  const decidedIso = new Set(decided.map((i) => i.iso2));
+  const included = decided.filter((i) => i.status === 'included');
+  const excluded = decided.filter((i) => i.status === 'excluded');
+  const suggested = fresh.filter((i) => !decidedIso.has(i.iso2));
+  const head = [...included, ...suggested].slice(0, MAX_RECOMMENDATIONS);
+  const room = MAX_RECOMMENDATIONS - head.length;
+  // Keep the most recent exclusions when there isn't room for all of them.
+  return [...head, ...(room > 0 ? excluded.slice(-room) : [])];
 }
