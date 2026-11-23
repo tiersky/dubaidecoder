@@ -99,7 +99,7 @@ export default function DashboardClient({ vm, ai }: DashboardClientProps) {
           currency={vm.currency}
           allocations={overviewAllocations}
           onSelectCountry={handleSelectFromMap}
-          onOpenCulture={() => handleTabChange('culture')}
+          destination={vm.context?.destination ?? null}
           recommendations={vm.recommendations}
         />
       )}
