@@ -13,7 +13,8 @@ const PAGE_SIZE = 10;
 interface CultureMatrixProps {
   markets: MarketVm[];
   onSelectCountry: (market: MarketVm) => void;
-  onOpenExplorer: () => void;
+  /** Shows an "Open culture explorer" link when given. */
+  onOpenExplorer?: () => void;
 }
 
 /**
@@ -61,9 +62,11 @@ export default function CultureMatrix({ markets, onSelectCountry, onOpenExplorer
             Hofstede&apos;s six dimensions, 0 to 100. Sort by a column; open a market from its row.
           </p>
         </div>
-        <button type="button" onClick={onOpenExplorer} className="press text-[13px] font-medium text-accent">
-          Open culture explorer
-        </button>
+        {onOpenExplorer && (
+          <button type="button" onClick={onOpenExplorer} className="press text-[13px] font-medium text-accent">
+            Open culture explorer
+          </button>
+        )}
       </div>
 
       <div className="mt-4 overflow-x-auto">

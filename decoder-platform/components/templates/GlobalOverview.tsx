@@ -5,18 +5,20 @@ import { MarketVm, AllocationRow } from "@/lib/dashboard/derive";
 import GlassCard from "@/components/atoms/GlassCard";
 import WorldMap from "@/components/organisms/WorldMap";
 import AllocationList from "@/components/organisms/AllocationList";
-import CultureMatrix from "@/components/organisms/CultureMatrix";
 import { formatMoney } from "@/lib/ui/theme";
 
 import SuggestedMarkets from '@/components/organisms/SuggestedMarkets';
+import CultureMap, { type CultureMapEntry } from '@/components/organisms/culture-space/CultureMap';
+import { cultureProfile } from '@/lib/insights/hofstede';
 import type { RecommendationSet } from '@/lib/config/types';
 interface GlobalOverviewProps {
   markets: MarketVm[];
   currency: string;
   allocations: AllocationRow[];
   onSelectCountry: (market: MarketVm) => void;
-  onOpenCulture: () => void;
   recommendations?: RecommendationSet;
+  /** The decoder's destination, the default centre of the culture orbit. */
+  destination?: { iso2: string; name: string } | null;
 }
 
 export default function GlobalOverview({
@@ -24,11 +26,19 @@ export default function GlobalOverview({
   currency,
   allocations,
   onSelectCountry,
-  onOpenCulture,
   recommendations,
+  destination,
 }: GlobalOverviewProps) {
   const total = useMemo(() => allocations.reduce((sum, a) => sum + (a.budget || 0), 0), [allocations]);
   const funded = allocations.filter((a) => a.budget > 0).length;
+  const cultureEntries = useMemo<CultureMapEntry[]>(
+    () =>
+      markets.flatMap((m) => {
+        const p = cultureProfile(m.iso2);
+        return p ? [{ id: `m:${m.name}`, name: m.name, iso2: m.iso2, scores: p.scores, regional: p.regional }] : [];
+      }),
+    [markets]
+  );
 
   return (
     <div className="space-y-5">
@@ -82,7 +92,17 @@ export default function GlobalOverview({
 
       {recommendations && <SuggestedMarkets set={recommendations} markets={markets} onSelect={onSelectCountry} />}
 
-      <CultureMatrix markets={markets} onSelectCountry={onSelectCountry} onOpenExplorer={onOpenCulture} />
+      {cultureEntries.length > 0 && (
+        <CultureMap
+          entries={cultureEntries}
+          destination={destination}
+          onOpenMarket={(name) => {
+            const m = markets.find((x) => x.name === name);
+            if (m) onSelectCountry(m);
+          }}
+        />
+      )}
+
     </div>
   );
 }

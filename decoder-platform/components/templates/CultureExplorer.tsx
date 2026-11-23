@@ -19,6 +19,7 @@ import {
 } from '@/lib/insights/hofstede';
 import { useFlip } from '@/lib/ui/use-flip';
 import CultureReadingBox from '@/components/organisms/CultureReadingBox';
+import CultureMatrix from '@/components/organisms/CultureMatrix';
 
 interface CultureExplorerProps {
   markets: MarketVm[];
@@ -125,7 +126,7 @@ export default function CultureExplorer({ markets, onSelectMarket, slug, aiEnabl
         <div className="min-w-0">
           <h1 className="display text-[26px] font-semibold text-ink sm:text-[28px]">Culture explorer</h1>
           <p className="mt-1 max-w-[62ch] text-[13.5px] text-ink-2">
-            Rank markets on Hofstede&apos;s six cultural dimensions, or describe the audience you want and see which markets fit it best.
+            Read every market&apos;s scores on Hofstede&apos;s six cultural dimensions, then rank markets or describe the audience you want and see which fit it best.
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-4">
@@ -144,6 +145,8 @@ export default function CultureExplorer({ markets, onSelectMarket, slug, aiEnabl
           </label>
         </div>
       </div>
+
+      <CultureMatrix markets={markets} onSelectCountry={(m) => onSelectMarket(m.name)} />
 
       <div className="grid items-stretch gap-4 lg:grid-cols-[360px_minmax(0,1fr)]">
           <section aria-label="Ranking controls" className="glass-card p-5 lg:order-1">
