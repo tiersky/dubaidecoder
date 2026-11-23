@@ -142,3 +142,54 @@ describe('validateConfig — allocation model v2 fields', () => {
     }
   });
 });
+
+describe('validateConfig — city markets with summer traffic', () => {
+  const summer = {
+    jets: {
+      airports: ['LFMN Nice'],
+      summerPer2Days: 118.5,
+      offPer2Days: 60,
+      uplift: 1.98,
+      seasonArrivals: 7231,
+      series: [{ label: '2025-06-06', value: 110 }, { label: '2025-06-20', value: 121 }],
+      peak: '2025-07-18',
+      captureRate: 0.97,
+      gccShare: 0.016,
+    },
+    yachts: {
+      sites: ['Monaco', 'Nice'],
+      summerHoursPerMonth: 121061,
+      offHoursPerMonth: 70000,
+      uplift: 1.73,
+      series: [{ label: '7', value: 130000 }],
+      peakMonth: 7,
+      year: 2023,
+    },
+    notes: ['Fri–Sat samples.'],
+  };
+  const city = (name: string, extra: object = {}) => ({
+    ...good.markets[0],
+    name,
+    iso2: 'fr',
+    lat: 43.7,
+    lng: 7.27,
+    place: { kind: 'city', country: 'France' },
+    ...extra,
+  });
+
+  it('keeps place and summer through validation (unknown keys would be stripped)', () => {
+    const r = validateConfig({ ...good, markets: [city('Nice', { summer }), city('Cannes'), ...good.markets.slice(2)] });
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    const nice = r.config.markets.find((m) => m.name === 'Nice')!;
+    expect(nice.place).toEqual({ kind: 'city', country: 'France' });
+    expect(nice.summer).toEqual(summer);
+    expect(r.config.markets.find((m) => m.name === 'Cannes')!.summer).toBeUndefined();
+  });
+
+  it('rejects a malformed summer block', () => {
+    const bad = { ...summer, yachts: { ...summer.yachts, peakMonth: 13 } };
+    const r = validateConfig({ ...good, markets: [city('Nice', { summer: bad }), ...good.markets.slice(1)] });
+    expect(r.ok).toBe(false);
+  });
+});

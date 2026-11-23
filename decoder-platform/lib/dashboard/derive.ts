@@ -1,5 +1,5 @@
 import { MetricDef } from '../model/score';
-import { AllocationModel, FixedAllocation, MarketControl, PlanningSettings, VersionConfig } from '../config/types';
+import { AllocationModel, FixedAllocation, MarketControl, MarketPlace, PlanningSettings, SummerTraffic, VersionConfig } from '../config/types';
 import { computeAllocation, type AllocationRow as ModelRow } from '../model/allocation';
 import { upgradeLegacyConfig } from '../model/migrate';
 
@@ -13,6 +13,9 @@ export interface MarketVm {
   indices: Record<string, number>;
   score: number;
   split: number;
+  /** Set for city markets; iso2 then names the parent country. */
+  place?: MarketPlace;
+  summer?: SummerTraffic;
 }
 
 export interface AxisOption {
@@ -82,6 +85,8 @@ export function deriveDashboard(saved: VersionConfig): DashboardVm {
       indices: r.indices,
       score: r.score,
       split: r.share,
+      ...(m.place && { place: m.place }),
+      ...(m.summer && { summer: m.summer }),
     };
   });
   const metricOptions = config.metrics.map((m) => ({ value: m.key, label: m.label }));

@@ -133,3 +133,17 @@ describe('one statistics universe across views', () => {
     for (const m of without.markets) expect(vm.markets.find((x) => x.name === m.name)!.split).toBeCloseTo(m.split, 12);
   });
 });
+
+describe('deriveDashboard — city markets', () => {
+  it('carries place and summer onto the market view model, and leaves country markets without them', () => {
+    const summer = { notes: ['test'] };
+    const vm = deriveDashboard({
+      ...config,
+      markets: config.markets.map((m, i) => (i === 0 ? { ...m, place: { kind: 'city' as const, country: 'France' }, summer } : m)),
+    });
+    expect(vm.markets[0].place).toEqual({ kind: 'city', country: 'France' });
+    expect(vm.markets[0].summer).toEqual(summer);
+    expect('place' in vm.markets[1]).toBe(false);
+    expect('summer' in vm.markets[1]).toBe(false);
+  });
+});

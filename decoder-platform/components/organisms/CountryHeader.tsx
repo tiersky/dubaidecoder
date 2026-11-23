@@ -41,6 +41,7 @@ export default function CountryHeader({ market, allocations, currency, onBack }:
           <div className="min-w-0">
             <h1 className="display truncate text-[30px] font-semibold text-ink sm:text-[34px]">{market.name}</h1>
             <p className="mt-0.5 text-[13.5px] text-ink-2">
+              {market.place && `${market.place.country} · `}
               {funded ? 'Funded in the recommended split' : 'Not funded in the recommended split'}
             </p>
           </div>

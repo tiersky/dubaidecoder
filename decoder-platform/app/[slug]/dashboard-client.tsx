@@ -8,6 +8,7 @@ import GlobalOverview from '@/components/templates/GlobalOverview';
 import CountryDetail from '@/components/templates/CountryDetail';
 import BudgetAllocation from '@/components/templates/BudgetAllocation';
 import CultureExplorer from '@/components/templates/CultureExplorer';
+import { cultureMarkets, marketForCultureName } from '@/lib/dashboard/culture-markets';
 
 type TabId = 'global' | 'budget' | 'culture';
 
@@ -124,7 +125,7 @@ export default function DashboardClient({ vm, ai }: DashboardClientProps) {
 
       {currentTab === 'budget' && <BudgetAllocation vm={vm} />}
 
-      {currentTab === 'culture' && <CultureExplorer markets={vm.markets} onSelectMarket={selectMarket} slug={vm.slug} aiEnabled={Boolean(ai)} />}
+      {currentTab === 'culture' && <CultureExplorer markets={cultureMarkets(vm.markets)} onSelectMarket={(name) => selectMarket(marketForCultureName(vm.markets, name)?.name ?? name)} slug={vm.slug} aiEnabled={Boolean(ai)} />}
     </DashboardLayout>
   );
 }

@@ -10,6 +10,7 @@ import { formatMoney } from "@/lib/ui/theme";
 import SuggestedMarkets from '@/components/organisms/SuggestedMarkets';
 import CultureMap, { type CultureMapEntry } from '@/components/organisms/culture-space/CultureMap';
 import { cultureProfile } from '@/lib/insights/hofstede';
+import { cultureMarkets, marketForCultureName } from '@/lib/dashboard/culture-markets';
 import type { RecommendationSet } from '@/lib/config/types';
 interface GlobalOverviewProps {
   markets: MarketVm[];
@@ -33,7 +34,7 @@ export default function GlobalOverview({
   const funded = allocations.filter((a) => a.budget > 0).length;
   const cultureEntries = useMemo<CultureMapEntry[]>(
     () =>
-      markets.flatMap((m) => {
+      cultureMarkets(markets).flatMap((m) => {
         const p = cultureProfile(m.iso2);
         return p ? [{ id: `m:${m.name}`, name: m.name, iso2: m.iso2, scores: p.scores, regional: p.regional }] : [];
       }),
@@ -97,7 +98,7 @@ export default function GlobalOverview({
           entries={cultureEntries}
           destination={destination}
           onOpenMarket={(name) => {
-            const m = markets.find((x) => x.name === name);
+            const m = marketForCultureName(markets, name);
             if (m) onSelectCountry(m);
           }}
         />

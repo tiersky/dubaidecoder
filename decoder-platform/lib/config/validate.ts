@@ -48,6 +48,36 @@ const controlSchema = z.object({
   setAt: z.string().max(40).optional(),
 });
 
+const seriesSchema = z.array(z.object({ label: z.string().min(1).max(40), value: z.number() })).max(60);
+
+const summerSchema = z.object({
+  jets: z
+    .object({
+      airports: z.array(z.string().min(1).max(80)).max(10),
+      summerPer2Days: z.number().min(0),
+      offPer2Days: z.number().min(0).nullable(),
+      uplift: z.number().min(0).nullable(),
+      seasonArrivals: z.number().min(0),
+      series: seriesSchema,
+      peak: z.string().max(40),
+      captureRate: z.number().min(0).max(1).nullable(),
+      gccShare: z.number().min(0).max(1).nullable(),
+    })
+    .optional(),
+  yachts: z
+    .object({
+      sites: z.array(z.string().min(1).max(80)).max(10),
+      summerHoursPerMonth: z.number().min(0),
+      offHoursPerMonth: z.number().min(0),
+      uplift: z.number().min(0).nullable(),
+      series: seriesSchema,
+      peakMonth: z.number().int().min(1).max(12),
+      year: z.number().int(),
+    })
+    .optional(),
+  notes: z.array(z.string().max(500)).max(8).optional(),
+});
+
 const marketSchema = z.object({
   name: z.string().min(1),
   iso2: z.string().length(2).nullable(),
@@ -56,6 +86,8 @@ const marketSchema = z.object({
   enabled: z.boolean(),
   values: z.record(z.string(), z.number().nullable()),
   origin: z.enum(['seed', 'recommended']).optional(),
+  place: z.object({ kind: z.literal('city'), country: z.string().min(1).max(120) }).optional(),
+  summer: summerSchema.optional(),
 });
 
 const configSchema = z.object({

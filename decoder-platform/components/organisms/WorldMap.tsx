@@ -1,10 +1,11 @@
 'use client';
 
-import { useState, useMemo, useCallback, memo } from 'react';
+import { useState, useMemo, useCallback, memo, useSyncExternalStore } from 'react';
 import {
   ComposableMap,
   Geographies,
   Geography,
+  Marker,
   ZoomableGroup,
 } from 'react-simple-maps';
 import { Tooltip } from 'react-tooltip';
@@ -45,6 +46,8 @@ import {
 /** Target market with no budget (toggled off by default). */
 const UNFUNDED_FILL = '#d6e4f5';
 const UNFUNDED_HOVER = '#c3d6ee';
+
+const noopSubscribe = () => () => {};
 
 interface WorldMapProps {
   markets: MarketVm[];
@@ -99,13 +102,23 @@ export default function WorldMap({
   allocations,
   onSelectCountry,
 }: WorldMapProps) {
+  // City decoders draw each market as a dot at its own coordinates; several
+  // cities can share a country, so countries are not filled or clickable.
+  const cities = useMemo(() => markets.filter((m) => m.place && m.lat !== null && m.lng !== null), [markets]);
+  const cityMode = markets.some((m) => m.place);
+  // Dots are drawn only in the browser: server and client project coordinates
+  // with last-digit float differences, which React reports as a hydration
+  // mismatch. The country shapes load client-side anyway.
+  const mounted = useSyncExternalStore(noopSubscribe, () => true, () => false);
+
   const marketByIso2 = useMemo(() => {
     const map = new Map<string, MarketVm>();
+    if (cityMode) return map;
     for (const m of markets) {
       if (m.iso2 !== null) map.set(m.iso2.toLowerCase(), m);
     }
     return map;
-  }, [markets]);
+  }, [markets, cityMode]);
 
   const allocationByName = useMemo(
     () => new Map(allocations.map((a) => [a.name, a])),
@@ -139,7 +152,8 @@ export default function WorldMap({
       <div className="w-full overflow-hidden rounded-[14px]" style={{ aspectRatio: '16 / 9.5' }}>
         <ComposableMap
           projection="geoMercator"
-          projectionConfig={{ scale: 118, center: [15, 24] }}
+          // City view: Florida to Turkey, the summer belt this decoder covers.
+          projectionConfig={cityMode ? { scale: 290, center: [-8, 41] } : { scale: 118, center: [15, 24] }}
           width={800}
           height={475}
           style={{ width: '100%', height: '100%' }}
@@ -181,6 +195,26 @@ export default function WorldMap({
                 })
               }
             </Geographies>
+            {mounted && cities.map((m) => {
+              const alloc = allocationByName.get(m.name);
+              const funded = Boolean(alloc && alloc.budget > 0);
+              const t = funded ? tone(alloc!.split) : 0;
+              return (
+                <Marker key={m.name} coordinates={[m.lng!, m.lat!]}>
+                  <circle
+                    r={funded ? 4 + 5 * t : 3.5}
+                    fill={funded ? rampColor(0.25 + 0.75 * t) : UNFUNDED_FILL}
+                    stroke="#fff"
+                    strokeWidth={1.2}
+                    className="map-geo"
+                    style={{ cursor: 'pointer' }}
+                    onClick={() => onSelectCountry(m)}
+                    data-tooltip-id="map-tooltip"
+                    data-tooltip-content={buildTooltipContent(m)}
+                  />
+                </Marker>
+              );
+            })}
           </ZoomableGroup>
         </ComposableMap>
       </div>

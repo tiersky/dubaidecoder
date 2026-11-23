@@ -17,6 +17,8 @@ interface MarketContextProps {
   compareName: string | null;
   onCompare: (name: string | null) => void;
   onSelectMarket: (name: string) => void;
+  /** For city markets: the parent country whose data this section shows. */
+  countryLabel?: string;
 }
 
 const COMPARE_FACTS = FACTS.filter((f) => f.key !== 'gdpGrowth' && f.key !== 'inflation');
@@ -30,7 +32,7 @@ function ordinal(n: number): string {
   return n + (s[(v - 20) % 10] || s[v] || s[0]);
 }
 
-export default function MarketContext({ market, markets, state, compareName, onCompare, onSelectMarket }: MarketContextProps) {
+export default function MarketContext({ market, markets, state, compareName, onCompare, onSelectMarket, countryLabel }: MarketContextProps) {
   if (state.status === 'unavailable') return null;
   const data = state.status === 'ready' ? state.data.countries : null;
   const own = market.iso2 && data ? data[market.iso2] : undefined;
@@ -43,7 +45,10 @@ export default function MarketContext({ market, markets, state, compareName, onC
     <section aria-label={`${market.name} market context`} className="space-y-3">
       <div className="flex flex-wrap items-end justify-between gap-3 px-1">
         <div>
-          <h2 className="text-[15px] font-semibold text-ink">Market context</h2>
+          <h2 className="text-[15px] font-semibold text-ink">
+            Market context
+            {countryLabel && <span className="font-medium text-ink-2"> · {countryLabel}, country level</span>}
+          </h2>
           <p className="mt-0.5 text-[12.5px] text-ink-2">Public economic and social data, set against the other markets in this decoder.</p>
         </div>
         {peers.length > 0 && (
