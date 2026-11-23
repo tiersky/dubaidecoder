@@ -12,6 +12,8 @@ interface CultureProfileCardProps {
   market: MarketVm;
   markets: MarketVm[];
   onOpenExplorer: () => void;
+  /** For city markets: the parent country whose profile this is. */
+  countryLabel?: string;
 }
 
 const AVERAGE = '__average__';
@@ -21,7 +23,7 @@ const EQUAL = Object.fromEntries(DIMENSIONS.map((d) => [d.key, 1])) as Record<(t
  * The market's six Hofstede dimensions as bars, with a marker for whichever
  * market (or the decoder average) it is compared against.
  */
-export default function CultureProfileCard({ market, markets, onOpenExplorer }: CultureProfileCardProps) {
+export default function CultureProfileCard({ market, markets, onOpenExplorer, countryLabel }: CultureProfileCardProps) {
   const profiles = useMemo(
     () =>
       markets
@@ -52,7 +54,10 @@ export default function CultureProfileCard({ market, markets, onOpenExplorer }: 
     <section aria-label={`${market.name} culture profile`} className="glass-card materialize p-5 sm:p-6" style={{ ['--i' as string]: 3 }}>
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h2 className="text-[15px] font-semibold text-ink">Culture profile</h2>
+          <h2 className="text-[15px] font-semibold text-ink">
+            Culture profile
+            {countryLabel && <span className="font-medium text-ink-2"> · {countryLabel}, country level</span>}
+          </h2>
           <p className="mt-0.5 text-[12.5px] text-ink-2">Hofstede&apos;s six dimensions, 0 to 100. The tick marks {compareLabel}.</p>
         </div>
         <div className="text-right">
