@@ -5,16 +5,17 @@ export default function Home() {
   return (
     <main className="flex min-h-dvh items-center justify-center p-6">
       <div className="materialize flex max-w-md flex-col items-center text-center">
-        <Image
-          src="/Country Decoder Logo.png"
-          alt="Country Decoder"
-          width={208}
-          height={80}
-          className="h-20 w-auto drop-shadow-[0_8px_24px_rgba(0,60,140,0.18)]"
-          priority
-        />
-        <h1 className="display mt-6 text-[40px] font-semibold text-ink sm:text-[48px]">Country Decoders</h1>
-        <p className="mt-3 text-[17px] leading-relaxed text-ink-2">
+        <h1>
+          <Image
+            src="/brand/country-decoder-lockup-stacked-black.svg"
+            alt="Country Decoder"
+            width={198}
+            height={120}
+            className="h-[120px] w-auto"
+            priority
+          />
+        </h1>
+        <p className="mt-6 text-[17px] leading-relaxed text-ink-2">
           Country decoder dashboards — access via your project link.
         </p>
         <Link href="/login" className="btn-primary mt-8 px-7 py-3 text-[15px]">

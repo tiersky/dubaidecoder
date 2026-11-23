@@ -27,7 +27,7 @@ Each decoder is generated from the client's own workbook, so every score and spl
 - Metric labels and descriptions come from uploaded workbooks and must be treated as untrusted text.
 
 ## Brand Commitments
-- Product name "Country Decoder(s)"; logo at `public/Country Decoder Logo.png`; tagline "Strategic Travel Intelligence".
+- Product name "Country Decoder(s)"; logos in `public/brand/` (from the country-decoder-logo-pack: black horizontal + stacked lockups; app icons in `app/icon.svg`, `app/apple-icon.png`, `app/favicon.ico`); tagline "Strategic Travel Intelligence".
 - User-stated direction (2026-11-10): Apple-style glass, minimal, with more motion.
 
 ## Evidence on Hand
