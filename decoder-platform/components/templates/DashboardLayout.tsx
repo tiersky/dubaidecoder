@@ -80,13 +80,14 @@ export default function DashboardLayout({
                 </button>
               )}
               <Image
-                src="/Country Decoder Logo.png"
+                src="/brand/country-decoder-lockup-horizontal-black.svg"
                 alt="Country Decoder"
-                width={94}
-                height={36}
-                className="h-9 w-auto flex-shrink-0"
+                width={96}
+                height={30}
+                className="h-[30px] w-auto flex-shrink-0"
                 priority
               />
+              <span className="hidden h-7 w-px flex-shrink-0 bg-black/10 sm:block" aria-hidden />
               <div className="hidden min-w-0 sm:block">
                 <p className="truncate text-[14px] font-semibold leading-tight text-ink">{title}</p>
                 <p className="truncate text-[11.5px] leading-tight text-ink-2">Strategic Travel Intelligence</p>

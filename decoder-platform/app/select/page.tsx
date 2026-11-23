@@ -52,9 +52,17 @@ export default async function SelectPage() {
     <main className="flex min-h-dvh items-center justify-center p-5">
       <div className="glass materialize w-full max-w-[440px] rounded-[28px] px-6 pb-6 pt-8 sm:px-8">
         <div className="flex flex-col items-center text-center">
-          <Image src="/Country Decoder Logo.png" alt="" width={125} height={48} className="h-12 w-auto" priority />
-          <h1 className="display mt-4 text-[24px] font-semibold text-ink">Country Decoder</h1>
-          <p className="mt-1 text-[14px] text-ink-2">{isAdmin ? 'All published projects' : 'Your projects'}</p>
+          <h1>
+            <Image
+              src="/brand/country-decoder-lockup-horizontal-black.svg"
+              alt="Country Decoder"
+              width={134}
+              height={42}
+              className="h-[42px] w-auto"
+              priority
+            />
+          </h1>
+          <p className="mt-3 text-[14px] text-ink-2">{isAdmin ? 'All published projects' : 'Your projects'}</p>
         </div>
 
         <ul className="well mt-7 divide-y divide-black/[0.06] overflow-hidden p-1">
