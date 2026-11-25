@@ -1,7 +1,10 @@
 'use client';
 
 import { useCallback, useMemo, useState } from 'react';
-import { DashboardVm, MarketVm, computeAllocations } from '@/lib/dashboard/derive';
+import { DashboardVm, MarketVm, toAllocationRows } from '@/lib/dashboard/derive';
+import { computeAllocation } from '@/lib/model/allocation';
+import { planRequest } from '@/lib/dashboard/plan';
+import { usePlan } from '@/lib/dashboard/use-plan';
 import DashboardLayout from '@/components/templates/DashboardLayout';
 import Sidebar from '@/components/organisms/Sidebar';
 import GlobalOverview from '@/components/templates/GlobalOverview';
@@ -49,30 +52,15 @@ export default function DashboardClient({ vm, ai }: DashboardClientProps) {
     }
   }, []);
 
-  const defaultEnabledNames = useMemo(
-    () => new Set(vm.markets.filter((m) => m.enabled).map((m) => m.name)),
-    [vm.markets]
-  );
-
-  const overviewAllocations = useMemo(
-    () =>
-      computeAllocations(
-        vm.markets,
-        vm.metrics,
-        vm.defaultWeights,
-        defaultEnabledNames,
-        vm.defaultBudget,
-        vm.allocation,
-        {
-          model: vm.model,
-          ...(vm.universe && { universe: vm.universe }),
-          controls: vm.marketControls,
-          planning: vm.planning,
-          concentration: vm.concentration,
-        }
-      ),
-    [vm, defaultEnabledNames]
-  );
+  // One plan (budget, weights, markets in the allocation) for every tab and
+  // country page, kept for the session so navigating never resets it.
+  const planState = usePlan(vm);
+  const { plan } = planState;
+  const request = useMemo(() => planRequest(vm, plan), [vm, plan]);
+  const result = useMemo(() => computeAllocation(request), [request]);
+  const allocations = useMemo(() => toAllocationRows(result.rows, vm.markets), [result, vm.markets]);
+  // Markets taken out of the allocation drop out of the overview's charts too.
+  const activeMarkets = useMemo(() => vm.markets.filter((m) => plan.enabled.has(m.name)), [vm.markets, plan.enabled]);
 
   const selectedMarket = selectedMarketName
     ? (vm.markets.find((m) => m.name === selectedMarketName) ?? null)
@@ -96,9 +84,9 @@ export default function DashboardClient({ vm, ai }: DashboardClientProps) {
     >
       {currentTab === 'global' && !selectedMarket && (
         <GlobalOverview
-          markets={vm.markets}
+          markets={activeMarkets}
           currency={vm.currency}
-          allocations={overviewAllocations}
+          allocations={allocations}
           onSelectCountry={handleSelectFromMap}
           destination={vm.context?.destination ?? null}
           recommendations={vm.recommendations}
@@ -111,7 +99,7 @@ export default function DashboardClient({ vm, ai }: DashboardClientProps) {
           market={selectedMarket}
           markets={vm.markets}
           metrics={vm.metrics}
-          allocations={overviewAllocations}
+          allocations={allocations}
           currency={vm.currency}
           slug={vm.slug}
           industry={vm.industry ?? null}
@@ -124,7 +112,7 @@ export default function DashboardClient({ vm, ai }: DashboardClientProps) {
         />
       )}
 
-      {currentTab === 'budget' && <BudgetAllocation vm={vm} />}
+      {currentTab === 'budget' && <BudgetAllocation vm={vm} plan={planState} request={request} result={result} allocations={allocations} />}
 
       {currentTab === 'culture' && <CultureExplorer markets={cultureMarkets(vm.markets)} onSelectMarket={(name) => selectMarket(marketForCultureName(vm.markets, name)?.name ?? name)} slug={vm.slug} aiEnabled={Boolean(ai)} />}
     </DashboardLayout>

@@ -1,8 +1,9 @@
 'use client';
 
 import { useState, useMemo, useCallback, useDeferredValue } from 'react';
-import { DashboardVm, statsUniverse, toAllocationRows } from '@/lib/dashboard/derive';
-import { computeAllocation, type AllocationRequest } from '@/lib/model/allocation';
+import type { AllocationRow, DashboardVm } from '@/lib/dashboard/derive';
+import type { AllocationRequest, AllocationResult } from '@/lib/model/allocation';
+import type { usePlan } from '@/lib/dashboard/use-plan';
 import { nextIncrement, simulateAllocation } from '@/lib/model/uncertainty';
 import ModelExplainer from '@/components/organisms/ModelExplainer';
 import GlassCard from '@/components/atoms/GlassCard';
@@ -16,60 +17,27 @@ import BudgetTable from '@/components/organisms/BudgetTable';
 
 interface BudgetAllocationProps {
   vm: DashboardVm;
+  /** The dashboard's shared plan: budget, weights and the markets in the allocation. */
+  plan: ReturnType<typeof usePlan>;
+  request: AllocationRequest;
+  result: AllocationResult;
+  allocations: AllocationRow[];
 }
 
-export default function BudgetAllocation({ vm }: BudgetAllocationProps) {
+export default function BudgetAllocation({ vm, plan: { plan, update, toggleMarket }, request, result, allocations }: BudgetAllocationProps) {
   const [xAxis, setXAxis] = useState(vm.defaults.xAxis);
   const [yAxis, setYAxis] = useState(vm.defaults.yAxis);
   const [bubbleSize, setBubbleSize] = useState(vm.defaults.bubbleSize);
-  const [totalBudget, setTotalBudget] = useState(vm.defaultBudget);
-  const [modelWeightsEnabled, setModelWeightsEnabled] = useState(false);
-  const [weights, setWeights] = useState<Record<string, number>>({
-    ...vm.defaultWeights,
-  });
-  const [enabledNames, setEnabledNames] = useState<Set<string>>(
-    () => new Set(vm.markets.filter((m) => m.enabled).map((m) => m.name))
-  );
-
-  const toggleMarket = useCallback((name: string) => {
-    setEnabledNames((prev) => {
-      const next = new Set(prev);
-      if (next.has(name)) next.delete(name);
-      else next.add(name);
-      return next;
-    });
-  }, []);
+  const { budget: totalBudget, weights, weightsOn: modelWeightsEnabled, enabled: enabledNames } = plan;
+  const setTotalBudget = useCallback((budget: number) => update({ budget }), [update]);
+  const setWeights = useCallback((w: Record<string, number>) => update({ weights: w }), [update]);
 
   const enabledMarkets = useMemo(
     () => vm.markets.filter((m) => enabledNames.has(m.name)),
     [vm.markets, enabledNames]
   );
 
-  // Toggling a market changes the allocation country list: v2 statistics are
-  // recomputed as if it had never been in the list (same rule as every view).
-  const universe = useMemo(
-    () => statsUniverse(vm.markets.map((m) => m.name), vm.universe, enabledNames),
-    [vm.universe, vm.markets, enabledNames]
-  );
   const v2 = vm.model !== 'workbook';
-  const request: AllocationRequest = useMemo(
-    () => ({
-      model: vm.model,
-      metrics: vm.metrics.map((m) => ({ ...m, weight: weights[m.key] ?? 0 })),
-      markets: vm.markets,
-      budget: totalBudget,
-      funded: enabledNames,
-      universe,
-      allocation: vm.allocation,
-      controls: vm.marketControls,
-      planning: vm.planning,
-      concentration: vm.concentration,
-    }),
-    [vm, weights, totalBudget, enabledNames, universe]
-  );
-  // One allocation feeds the table, treemap, chart and warnings.
-  const result = useMemo(() => computeAllocation(request), [request]);
-  const allocations = useMemo(() => toAllocationRows(result.rows, vm.markets), [result, vm.markets]);
   const warnings = v2 ? result.warnings : [];
   // The simulation trails slider drags instead of blocking them.
   const deferred = useDeferredValue(request);
@@ -147,12 +115,9 @@ export default function BudgetAllocation({ vm }: BudgetAllocationProps) {
             weights={weights}
             onChange={setWeights}
             enabled={modelWeightsEnabled}
-            onToggle={() => {
-              if (modelWeightsEnabled) {
-                setWeights({ ...vm.defaultWeights });
-              }
-              setModelWeightsEnabled(!modelWeightsEnabled);
-            }}
+            onToggle={() =>
+              update(modelWeightsEnabled ? { weightsOn: false, weights: { ...vm.defaultWeights } } : { weightsOn: true })
+            }
           />
         </div>
 

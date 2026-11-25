@@ -6,7 +6,8 @@ import type { MarketRow, SummerTraffic, VersionConfig } from '../lib/config/type
 import type { MetricDef } from '../lib/model/score';
 import { gwiStats } from '../lib/gwi/client';
 import { fetchGwiResults } from '../lib/gwi/query';
-import type { GwiResults } from '../lib/gwi/types';
+import { gwiCountry } from '../lib/gwi/locations';
+import { GWI_MIN_SAMPLE, type GwiResults } from '../lib/gwi/types';
 import { OMNIYAT_GWI } from './omniyat-gwi';
 
 // Omniyat summer decoder: city and resort markets scored on where
@@ -30,7 +31,7 @@ const METRICS: MetricDef[] = [
   {
     key: 'jets_summer',
     label: 'Summer private jets',
-    weight: 35,
+    weight: 30,
     direction: 'higher',
     unit: 'per 2 days',
     source: 'OpenSky Network arrivals, corrected with EUROCONTROL airport traffic (summer 2025)',
@@ -39,7 +40,7 @@ const METRICS: MetricDef[] = [
   {
     key: 'jets_uplift',
     label: 'Private-jet summer uplift',
-    weight: 15,
+    weight: 10,
     direction: 'higher',
     unit: '×',
     source: 'OpenSky Network (summer 2025 vs Nov 2024, Feb and Apr 2025)',
@@ -57,7 +58,7 @@ const METRICS: MetricDef[] = [
   {
     key: 'yacht_uplift',
     label: 'Yacht summer uplift',
-    weight: 20,
+    weight: 15,
     direction: 'higher',
     unit: '×',
     source: 'EMODnet Human Activities vessel density, pleasure craft (2023)',
@@ -71,6 +72,16 @@ const METRICS: MetricDef[] = [
     unit: '%',
     source: 'OpenSky Network aircraft registrations (summer 2025)',
     description: 'Share of summer private arrivals on aircraft registered in the GCC. A floor: many Gulf jets are registered offshore.',
+  },
+  {
+    key: 'uhnw_audience',
+    label: 'Affluent investors (GWI)',
+    weight: 15,
+    direction: 'higher',
+    unit: 'people',
+    source: 'GWI Core, Q4 2025 – Q3 2026 (top global purchasing power and high savings/investments)',
+    description:
+      'Residents of the market’s country in GWI’s affluent-investor audience, the closest GWI proxy for UHNW. Country level: cities share their country’s figure (Monaco reads France).',
   },
 ];
 
@@ -88,21 +99,10 @@ async function main() {
   const file = path.resolve(process.cwd(), '../tools/summer-jets/out/cities.json');
   const cities = JSON.parse(readFileSync(file, 'utf-8')) as CityRecord[];
 
-  const markets: MarketRow[] = cities.map((c) => ({
-    name: c.name,
-    iso2: c.iso2,
-    lat: c.lat,
-    lng: c.lng,
-    enabled: !OFF_BY_DEFAULT.has(c.name),
-    values: Object.fromEntries(METRICS.map((m) => [m.key, c.values[m.key] ?? null])),
-    place: { kind: 'city', country: c.country },
-    summer: c.summer,
-  }));
-
   const gwiFile = path.resolve(process.cwd(), '../tools/summer-jets/out/gwi.json');
   let results: GwiResults;
   if (process.argv.includes('--refresh-gwi') || !existsSync(gwiFile)) {
-    results = await fetchGwiResults(OMNIYAT_GWI, markets.map((m) => m.iso2), gwiStats);
+    results = await fetchGwiResults(OMNIYAT_GWI, cities.map((c) => c.iso2), gwiStats);
     writeFileSync(gwiFile, JSON.stringify(results, null, 1));
     console.log(`GWI: ${results.calls} calls, ${Object.keys(results.locations).length} countries${results.errors ? `, errors ${JSON.stringify(results.errors)}` : ''}`);
   } else {
@@ -110,12 +110,32 @@ async function main() {
     console.log(`GWI: cached from ${results.fetchedAt}`);
   }
 
+  /** Affluent-investor audience in the market's country; blank when GWI's sample is too thin. */
+  const uhnw = (iso2: string) => {
+    const s = results.sizes['affluent-investors']?.[gwiCountry(iso2) ?? ''];
+    return s && s.sample >= GWI_MIN_SAMPLE ? s.size : null;
+  };
+
+  const markets: MarketRow[] = cities.map((c) => ({
+    name: c.name,
+    iso2: c.iso2,
+    lat: c.lat,
+    lng: c.lng,
+    enabled: !OFF_BY_DEFAULT.has(c.name),
+    values: Object.fromEntries(METRICS.map((m) => [m.key, m.key === 'uhnw_audience' ? uhnw(c.iso2) : (c.values[m.key] ?? null)])),
+    place: { kind: 'city', country: c.country },
+    summer: c.summer,
+  }));
+
   const config: VersionConfig = {
     name: 'Omniyat Decoder',
     slug: SLUG,
     currency: 'USD',
     defaultBudget: BUDGET,
-    model: 'workbook',
+    // No client workbook and no audience/CPM pair, so the score-weighted split;
+    // 1.5 keeps the strongest markets clearly ahead.
+    model: 'score',
+    concentration: 1.5,
     metrics: METRICS,
     markets,
     context: {

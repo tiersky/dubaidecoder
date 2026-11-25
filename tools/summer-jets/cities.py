@@ -63,10 +63,13 @@ def main():
     out = []
     for name, country, iso2, lat, lng, aps, hubs, notes in CITIES:
         notes = list(notes)
-        rows = [airports[a] for a in aps if a in airports]
-        missing = [a for a in aps if a not in airports]
+        # An airport with no arrivals in any sample, even in peak summer, is
+        # outside OpenSky's receiver coverage: no data, not zero traffic.
+        blind = [a for a in aps if a in airports and not num(airports[a]['raw_private_jets_per_2days_summer'])]
+        rows = [airports[a] for a in aps if a in airports and a not in blind]
+        missing = [a for a in aps if a not in airports or a in blind]
         if missing:
-            notes.append(f'No jet data yet for {", ".join(missing)}.')
+            notes.append(f'OpenSky coverage at {", ".join(missing)} is too thin to count private jets, so jet traffic is not measured here.')
         jets = None
         if rows:
             series = []
