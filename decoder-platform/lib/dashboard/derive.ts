@@ -45,6 +45,8 @@ export interface DashboardVm {
   recommendations?: VersionConfig['recommendations'];
   /** Markets added from an AI suggestion. */
   recommendedMarkets: string[];
+  /** GWI audiences, panels and stored results (country level). */
+  gwi?: VersionConfig['gwi'];
 }
 
 /**
@@ -123,6 +125,7 @@ export function deriveDashboard(saved: VersionConfig): DashboardVm {
     ...(config.concentration !== undefined && { concentration: config.concentration }),
     ...(config.context && { context: config.context }),
     ...(config.recommendations && { recommendations: config.recommendations }),
+    ...(config.gwi && { gwi: config.gwi }),
     recommendedMarkets: config.markets.filter((m) => m.origin === 'recommended').map((m) => m.name),
   };
 }

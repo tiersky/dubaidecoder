@@ -87,3 +87,56 @@ describe('contextFingerprint', () => {
     expect(a).toMatch(/^[0-9a-f]{64}$/);
   });
 });
+
+describe('buildMarketContext — city markets with summer traffic and GWI', () => {
+  const jets = (perTwo: number) => ({
+    airports: ['LFMN Nice'],
+    summerPer2Days: perTwo,
+    offPer2Days: perTwo / 4,
+    uplift: 4,
+    seasonArrivals: perTwo * 61,
+    series: [],
+    peak: '2025-07-18',
+    captureRate: 0.8,
+    gccShare: 0.031,
+  });
+  const city: VersionConfig = {
+    ...config,
+    context: { ...config.context, objective: 'Summer presence', destination: { iso2: 'ae', name: 'Dubai', lat: 25, lng: 55 } },
+    markets: [
+      { ...config.markets[0], name: 'Monaco & Nice', iso2: 'mc', place: { kind: 'city', country: 'Monaco' }, summer: { jets: jets(200) } },
+      { ...config.markets[1], name: 'Saint-Tropez', iso2: 'fr', place: { kind: 'city', country: 'France' }, summer: { jets: jets(300) } },
+      { ...config.markets[2] },
+    ],
+    gwi: {
+      waves: ['q3_2026'],
+      audiences: [{ key: 'a', name: 'Affluent investors', expression: { and: [{ question: 'i7', datapoints: ['i7_1'] }] } }],
+      primaryAudience: 'a',
+      panels: [],
+      results: {
+        fetchedAt: '2026-11-25T00:00:00Z',
+        calls: 1,
+        waves: ['q3_2026'],
+        locations: { fr: { code: 's2_33', name: 'France' } },
+        unsupported: [],
+        sizes: { a: { fr: { size: 2_853_000, sample: 2495, universe: 49e6, share: 5.8 } } },
+        panels: {},
+      },
+    },
+  };
+
+  it('adds the objective, destination, parent country, summer ranks and the GWI audience', () => {
+    const ctx = buildMarketContext(city, 'Monaco & Nice')!;
+    expect(ctx.version.objective).toBe('Summer presence');
+    expect(ctx.version.destination).toBe('Dubai');
+    expect(ctx.market.country).toBe('Monaco');
+    expect(ctx.summer?.privateJets).toMatchObject({ arrivalsPer2DaysSummer: 200, rank: 2, of: 2, gccRegisteredShare: 3.1 });
+    expect(ctx.audience).toMatchObject({ country: 'France', readsCountryOf: 'MC', people: 2_853_000 });
+  });
+
+  it('leaves both blocks out for a plain country decoder', () => {
+    const ctx = buildMarketContext(config, 'Alpha')!;
+    expect(ctx.summer).toBeUndefined();
+    expect(ctx.audience).toBeUndefined();
+  });
+});

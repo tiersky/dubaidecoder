@@ -9,6 +9,8 @@ import MarketInsightCard from "@/components/organisms/MarketInsightCard";
 import MarketContext from "@/components/organisms/MarketContext";
 import CultureProfileCard from "@/components/organisms/CultureProfileCard";
 import SummerTrafficCard from "@/components/organisms/SummerTrafficCard";
+import GwiAudienceCard from "@/components/organisms/GwiAudienceCard";
+import type { GwiConfig } from "@/lib/gwi/types";
 import { useCountryData } from "@/lib/insights/use-country-data";
 import { cultureMarkets } from "@/lib/dashboard/culture-markets";
 
@@ -23,6 +25,8 @@ interface CountryDetailProps {
   ai?: { canRegenerate: boolean };
   /** Public context data; off for unpublished draft previews. */
   context?: boolean;
+  /** GWI audiences and stored results, when the decoder has them. */
+  gwi?: GwiConfig;
   onBack: () => void;
   onSelectMarket: (name: string) => void;
   onOpenCulture: () => void;
@@ -38,6 +42,7 @@ export default function CountryDetail({
   industry,
   ai,
   context = true,
+  gwi,
   onBack,
   onSelectMarket,
   onOpenCulture,
@@ -50,6 +55,7 @@ export default function CountryDetail({
       <CountryHeader market={market} allocations={allocations} currency={currency} onBack={onBack} />
       <IndicatorStrip market={market} markets={markets} metrics={metrics} />
       {market.summer && <SummerTrafficCard name={market.name} summer={market.summer} />}
+      <GwiAudienceCard gwi={gwi} iso2={market.iso2} marketIso2s={markets.map((m) => m.iso2)} countryLabel={market.place?.country} />
       {ai && (
         <MarketInsightCard
           key={market.name}

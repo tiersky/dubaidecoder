@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import type { VersionConfig } from '../config/types';
 import { deriveDashboard } from '../dashboard/derive';
+import { gwiMarketView, waveSpan } from '../gwi/view';
 
 /**
  * Everything the AI is allowed to know about one market, computed
@@ -18,6 +19,9 @@ export interface MarketContext {
     marketCount: number;
     activeMarketCount: number;
     fixedSplit: boolean;
+    /** Optional: older contexts (and their cache fingerprints) don't carry these. */
+    objective?: string | null;
+    destination?: string | null;
   };
   market: {
     name: string;
@@ -27,6 +31,8 @@ export interface MarketContext {
     budgetRank: number | null;
     weightedScore: number;
     scoreRank: number | null;
+    /** Set for city or resort markets: country-level data describes this country. */
+    country?: string;
   };
   metrics: Array<{
     label: string;
@@ -43,6 +49,121 @@ export interface MarketContext {
   }>;
   drivers: { strengths: string[]; weaknesses: string[] };
   peers: Array<{ name: string; sharePct: number }>;
+  /** Summer UHNW traffic (flight and vessel tracking), city decoders only. */
+  summer?: SummerContext;
+  /** GWI survey audience for the market's country. */
+  audience?: AudienceContext;
+}
+
+export interface SummerContext {
+  privateJets?: {
+    airports: string[];
+    arrivalsPer2DaysSummer: number;
+    arrivalsPer2DaysOffSeason: number | null;
+    summerUplift: number | null;
+    estimatedArrivalsJunSep: number;
+    peakFortnightStarting: string;
+    gccRegisteredShare: number | null;
+    /** 1 = most summer private-jet arrivals among the decoder's markets with jet data. */
+    rank: number;
+    of: number;
+  };
+  yachts?: {
+    hubs: string[];
+    pleasureCraftHoursPerMonthSummer: number;
+    summerUplift: number | null;
+    peakMonth: string;
+    year: number;
+    rank: number;
+    of: number;
+  };
+  notes?: string[];
+}
+
+export interface AudienceContext {
+  source: string;
+  country: string;
+  readsCountryOf?: string;
+  audience: string;
+  definition: string | null;
+  people: number | null;
+  shareOfInternetUsers: number | null;
+  respondents: number | null;
+  indicative: boolean;
+  otherAudiences: Array<{ name: string; people: number; shareOfInternetUsers: number }>;
+  sameAudienceIn: Array<{ country: string; people: number; shareOfInternetUsers: number }>;
+  panels: Array<{
+    title: string;
+    respondents: number;
+    indicative: boolean;
+    answers: Array<{ answer: string; pct: number; decoderAverage: number | null; index: number }>;
+  }>;
+  notSurveyedHere: string[];
+}
+
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+function rankBy<T>(all: T[], value: (t: T) => number | undefined, mine: number): { rank: number; of: number } {
+  const vals = all.map(value).filter((v): v is number => typeof v === 'number');
+  return { rank: vals.filter((v) => v > mine).length + 1, of: vals.length };
+}
+
+function summerContext(config: VersionConfig, marketName: string): SummerContext | undefined {
+  const market = config.markets.find((m) => m.name === marketName);
+  const s = market?.summer;
+  if (!s) return undefined;
+  const active = config.markets.filter((m) => m.enabled);
+  const out: SummerContext = {};
+  if (s.jets) {
+    out.privateJets = {
+      airports: s.jets.airports,
+      arrivalsPer2DaysSummer: round(s.jets.summerPer2Days, 1),
+      arrivalsPer2DaysOffSeason: s.jets.offPer2Days === null ? null : round(s.jets.offPer2Days, 1),
+      summerUplift: s.jets.uplift === null ? null : round(s.jets.uplift, 2),
+      estimatedArrivalsJunSep: Math.round(s.jets.seasonArrivals),
+      peakFortnightStarting: s.jets.peak,
+      gccRegisteredShare: s.jets.gccShare === null ? null : round(s.jets.gccShare * 100, 1),
+      ...rankBy(active, (m) => m.summer?.jets?.summerPer2Days, s.jets.summerPer2Days),
+    };
+  }
+  if (s.yachts) {
+    out.yachts = {
+      hubs: s.yachts.sites,
+      pleasureCraftHoursPerMonthSummer: Math.round(s.yachts.summerHoursPerMonth),
+      summerUplift: s.yachts.uplift === null ? null : round(s.yachts.uplift, 2),
+      peakMonth: MONTHS[s.yachts.peakMonth - 1],
+      year: s.yachts.year,
+      ...rankBy(active, (m) => m.summer?.yachts?.summerHoursPerMonth, s.yachts.summerHoursPerMonth),
+    };
+  }
+  if (s.notes?.length) out.notes = s.notes;
+  return out;
+}
+
+function audienceContext(config: VersionConfig, iso2: string | null): AudienceContext | undefined {
+  const v = gwiMarketView(config.gwi, iso2, config.markets.map((m) => m.iso2));
+  if (!v) return undefined;
+  const size = v.audience.size;
+  return {
+    source: `GWI Core survey, internet users 16–64, ${waveSpan(v.waves)}. Shares are of the audience in ${v.country.name}; index compares with all internet users across the ${v.baseCountries} countries fetched (100 = average).`,
+    country: v.country.name,
+    ...(v.proxyOf && { readsCountryOf: v.proxyOf.toUpperCase() }),
+    audience: v.audience.name,
+    definition: v.audience.description ?? null,
+    people: size ? size.size : null,
+    shareOfInternetUsers: size ? size.share : null,
+    respondents: size ? size.sample : null,
+    indicative: v.audience.low,
+    otherAudiences: v.others.map((o) => ({ name: o.name, people: o.size.size, shareOfInternetUsers: o.size.share })),
+    sameAudienceIn: v.reference.map((r) => ({ country: r.name, people: r.size.size, shareOfInternetUsers: r.size.share })),
+    panels: v.panels.map((p) => ({
+      title: p.title,
+      respondents: p.sample,
+      indicative: p.low,
+      answers: p.bars.map((b) => ({ answer: b.label, pct: b.pct, decoderAverage: b.avg === null ? null : round(b.avg, 1), index: Math.round(b.index) })),
+    })),
+    notSurveyedHere: v.missing,
+  };
 }
 
 const round = (n: number, dp = 2) => Math.round(n * 10 ** dp) / 10 ** dp;
@@ -107,6 +228,9 @@ export function buildMarketContext(config: VersionConfig, marketName: string): M
   const budgetRank = isFunded ? funded.findIndex((m) => m.name === market.name) + 1 : null;
   const scoreRank = market.enabled ? byScore.findIndex((m) => m.name === market.name) + 1 : null;
 
+  const summer = summerContext(config, market.name);
+  const audience = audienceContext(config, market.iso2);
+
   return {
     version: {
       name: config.name,
@@ -117,6 +241,8 @@ export function buildMarketContext(config: VersionConfig, marketName: string): M
       marketCount: config.markets.length,
       activeMarketCount: active.length,
       fixedSplit: Boolean(config.allocation),
+      ...(config.context?.objective && { objective: config.context.objective }),
+      ...(config.context?.destination && { destination: config.context.destination.name }),
     },
     market: {
       name: market.name,
@@ -126,15 +252,18 @@ export function buildMarketContext(config: VersionConfig, marketName: string): M
       budgetRank,
       weightedScore: round(market.score, 2),
       scoreRank,
+      ...(market.place && { country: market.place.country }),
     },
     metrics,
     drivers: { strengths: strengths.slice(0, 4), weaknesses: weaknesses.slice(0, 4) },
     peers: funded.slice(0, 5).map((m) => ({ name: m.name, sharePct: round(m.split * 100, 2) })),
+    ...(summer && { summer }),
+    ...(audience && { audience }),
   };
 }
 
 /** Bump when the prompt or output shape changes, so stale analyses regenerate. */
-export const PROMPT_VERSION = 1;
+export const PROMPT_VERSION = 2;
 
 export function contextFingerprint(ctx: MarketContext): string {
   return createHash('sha256')

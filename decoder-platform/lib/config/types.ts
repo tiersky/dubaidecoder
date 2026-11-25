@@ -1,4 +1,5 @@
 import type { MetricDef } from '../model/score';
+import type { GwiConfig } from '../gwi/types';
 
 export interface MarketRow {
   name: string;
@@ -150,4 +151,6 @@ export interface VersionConfig {
   concentration?: number;
   /** AI market suggestions made when the decoder was built. */
   recommendations?: RecommendationSet;
+  /** GWI audiences and chart panels, with their numbers fixed at fetch time. */
+  gwi?: GwiConfig;
 }
