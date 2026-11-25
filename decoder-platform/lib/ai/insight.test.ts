@@ -73,3 +73,46 @@ describe('parseInsight', () => {
     expect(parseInsight('')).toBeNull();
   });
 });
+
+describe('buildInsightPrompt — city markets with summer and GWI data', () => {
+  const city: MarketContext = {
+    ...ctx,
+    version: { ...ctx.version, name: 'Omniyat Decoder', brief: 'OMNIYAT wants to be where GCC UHNW buyers summer.', objective: 'Summer presence among UHNW buyers', destination: 'Dubai' },
+    market: { ...ctx.market, name: 'Mykonos', country: 'Greece' },
+    summer: {
+      privateJets: { airports: ['LGMK Mykonos'], arrivalsPer2DaysSummer: 120, arrivalsPer2DaysOffSeason: 6, summerUplift: 20, estimatedArrivalsJunSep: 7300, peakFortnightStarting: '2025-08-01', gccRegisteredShare: 2.1, rank: 3, of: 20 },
+    },
+    audience: {
+      source: 'GWI Core',
+      country: 'Greece',
+      audience: 'Affluent investors',
+      definition: 'proxy',
+      people: 92100,
+      shareOfInternetUsers: 1.6,
+      respondents: 84,
+      indicative: true,
+      otherAudiences: [],
+      sameAudienceIn: [{ country: 'UAE', people: 1797197, shareOfInternetUsers: 19.4 }],
+      panels: [],
+      notSurveyedHere: [],
+    },
+  };
+
+  it('writes to the brief and explains the summer and GWI blocks', () => {
+    const p = buildInsightPrompt(city);
+    expect(p).toContain('OBJECTIVE: Summer presence among UHNW buyers');
+    expect(p).toContain('DESTINATION: Dubai');
+    expect(p).toContain('MARKET UNDER ANALYSIS: Mykonos, a city / resort market in Greece');
+    expect(p).toMatch(/Frame every point through the brief/);
+    expect(p).toMatch(/OpenSky/);
+    expect(p).toMatch(/LIVE in Greece/);
+    expect(p).toMatch(/never call it a UHNW count/);
+    expect(p).toMatch(/timing window/);
+  });
+
+  it('leaves the summer and GWI guidance out when the data is absent', () => {
+    const p = buildInsightPrompt(ctx);
+    expect(p).not.toMatch(/OpenSky|GWI survey data/);
+    expect(p).not.toContain('OBJECTIVE:');
+  });
+});

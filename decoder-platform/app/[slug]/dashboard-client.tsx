@@ -117,6 +117,7 @@ export default function DashboardClient({ vm, ai }: DashboardClientProps) {
           industry={vm.industry ?? null}
           ai={ai}
           context={Boolean(ai)}
+          gwi={vm.gwi}
           onBack={handleBack}
           onSelectMarket={selectMarket}
           onOpenCulture={() => handleTabChange('culture')}

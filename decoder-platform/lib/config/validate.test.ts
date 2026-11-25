@@ -193,3 +193,46 @@ describe('validateConfig — city markets with summer traffic', () => {
     expect(r.ok).toBe(false);
   });
 });
+
+describe('validateConfig — GWI audiences and panels', () => {
+  const gwi = {
+    waves: ['q4_2025', 'q1_2026'],
+    audiences: [
+      {
+        key: 'affluent',
+        name: 'Affluent investors',
+        expression: { and: [{ question: 'i7', datapoints: ['i7_1'] }, { or: [{ question: 'i5', datapoints: ['i5_3'] }] }] },
+      },
+    ],
+    primaryAudience: 'affluent',
+    panels: [{ key: 'vac', title: 'Vacations', question: 'q32203', datapoints: [{ code: 'q32203_4', label: 'Beach' }], audience: 'affluent' }],
+    results: {
+      fetchedAt: '2026-11-25T00:00:00Z',
+      calls: 2,
+      waves: ['q4_2025', 'q1_2026'],
+      locations: { ae: { code: 's2_971', name: 'UAE' } },
+      unsupported: ['mc'],
+      sizes: { affluent: { ae: { size: 1797197, sample: 1371, universe: 9273204, share: 19.4 } } },
+      panels: { vac: { ae: { q32203_4: { pct: 60.9, index: 106.7, sample: 1371 } } } },
+    },
+  };
+
+  it('keeps nested expressions and stored results', () => {
+    const r = validateConfig({ ...good, gwi });
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.config.gwi).toEqual(gwi);
+  });
+
+  it('rejects a panel or primary audience pointing at an undefined audience', () => {
+    const r = validateConfig({ ...good, gwi: { ...gwi, primaryAudience: 'nope', panels: [{ ...gwi.panels[0], audience: 'ghost' }] } });
+    expect(r.ok).toBe(false);
+    if (!r.ok) {
+      expect(r.errors).toContain('gwi: primary audience "nope" is not defined');
+      expect(r.errors).toContain('gwi.panels.vac: unknown audience "ghost"');
+    }
+  });
+
+  it('rejects an empty condition list', () => {
+    expect(validateConfig({ ...good, gwi: { ...gwi, audiences: [{ ...gwi.audiences[0], expression: { and: [] } }] } }).ok).toBe(false);
+  });
+});

@@ -90,6 +90,63 @@ const marketSchema = z.object({
   summer: summerSchema.optional(),
 });
 
+const gwiKey = z.string().regex(/^[a-z0-9-]+$/).max(40);
+const gwiCode = z.string().regex(/^[A-Za-z0-9_.-]+$/).max(80);
+const gwiCondition = z.object({
+  question: gwiCode,
+  datapoints: z.array(gwiCode).min(1).max(200),
+  suffixes: z.array(gwiCode).max(20).optional(),
+  not: z.boolean().optional(),
+});
+type GwiNodeIn = z.infer<typeof gwiCondition> | { and: GwiNodeIn[] } | { or: GwiNodeIn[] };
+const gwiExpression: z.ZodType<{ and: GwiNodeIn[] } | { or: GwiNodeIn[] }> = z.lazy(() =>
+  z.union([z.object({ and: z.array(gwiNode).min(1).max(30) }), z.object({ or: z.array(gwiNode).min(1).max(30) })])
+);
+const gwiNode: z.ZodType<GwiNodeIn> = z.lazy(() => z.union([gwiCondition, gwiExpression]));
+const gwiSize = z.object({ size: z.number().min(0), sample: z.number().int().min(0), universe: z.number().min(0), share: z.number().min(0).max(100) });
+const gwiCell = z.object({ pct: z.number().min(0).max(100), index: z.number().min(0), sample: z.number().int().min(0) });
+const gwiSchema = z.object({
+  waves: z.array(gwiCode).min(1).max(12),
+  audiences: z
+    .array(
+      z.object({
+        key: gwiKey,
+        name: z.string().min(1).max(80),
+        description: z.string().max(400).optional(),
+        expression: gwiExpression,
+        gwiId: z.string().max(80).optional(),
+      })
+    )
+    .min(1)
+    .max(10),
+  primaryAudience: gwiKey,
+  panels: z
+    .array(
+      z.object({
+        key: gwiKey,
+        title: z.string().min(1).max(80),
+        question: gwiCode,
+        datapoints: z.array(z.object({ code: gwiCode, label: z.string().min(1).max(120), home: z.string().length(2).optional() })).min(1).max(12),
+        suffix: gwiCode.optional(),
+        audience: gwiKey,
+      })
+    )
+    .max(12),
+  reference: z.array(z.string().length(2)).max(10).optional(),
+  results: z
+    .object({
+      fetchedAt: z.string(),
+      calls: z.number().int().min(0),
+      waves: z.array(gwiCode),
+      locations: z.record(z.string(), z.object({ code: gwiCode, name: z.string() })),
+      unsupported: z.array(z.string()),
+      sizes: z.record(z.string(), z.record(z.string(), gwiSize)),
+      panels: z.record(z.string(), z.record(z.string(), z.record(z.string(), gwiCell))),
+      errors: z.record(z.string(), z.string().max(500)).optional(),
+    })
+    .optional(),
+});
+
 const configSchema = z.object({
   name: z.string().min(1),
   slug: z.string().regex(/^[a-z0-9-]+$/, 'slug must be lowercase letters, digits, hyphens'),
@@ -129,6 +186,7 @@ const configSchema = z.object({
     .optional(),
   concentration: z.number().min(0.25).max(4).optional(),
   recommendations: recommendationSchema.optional(),
+  gwi: gwiSchema.optional(),
 });
 
 export function validateConfig(
@@ -190,6 +248,15 @@ export function validateConfig(
   for (const [n, c] of Object.entries(cfg.marketControls ?? {})) {
     if (!names.has(n)) errors.push(`marketControls: unknown market "${n}"`);
     if (c.min !== undefined && c.max !== undefined && c.min > c.max) errors.push(`marketControls.${n}: min is above max`);
+  }
+
+  if (cfg.gwi) {
+    const aud = cfg.gwi.audiences.map((a) => a.key);
+    if (new Set(aud).size !== aud.length) errors.push('gwi: duplicate audience keys');
+    if (!aud.includes(cfg.gwi.primaryAudience)) errors.push(`gwi: primary audience "${cfg.gwi.primaryAudience}" is not defined`);
+    const panels = cfg.gwi.panels.map((p) => p.key);
+    if (new Set(panels).size !== panels.length) errors.push('gwi: duplicate panel keys');
+    for (const p of cfg.gwi.panels) if (!aud.includes(p.audience)) errors.push(`gwi.panels.${p.key}: unknown audience "${p.audience}"`);
   }
 
   if (errors.length > 0) return { ok: false, errors };

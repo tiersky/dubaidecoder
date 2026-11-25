@@ -1,9 +1,13 @@
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { validateConfig } from '../lib/config/validate';
 import { publishVersion } from '../lib/versions/store';
 import type { MarketRow, SummerTraffic, VersionConfig } from '../lib/config/types';
 import type { MetricDef } from '../lib/model/score';
+import { gwiStats } from '../lib/gwi/client';
+import { fetchGwiResults } from '../lib/gwi/query';
+import type { GwiResults } from '../lib/gwi/types';
+import { OMNIYAT_GWI } from './omniyat-gwi';
 
 // Omniyat summer decoder: city and resort markets scored on where
 // ultra-high-net-worth audiences spend June–September. Built from the
@@ -11,7 +15,11 @@ import type { MetricDef } from '../lib/model/score';
 // first). Re-run this script after the data refreshes; each run publishes a
 // new revision of the same slug.
 //
-// Usage (from decoder-platform/): npx tsx --env-file=.env.local scripts/seed-omniyat.ts [--dry-run]
+// GWI numbers are cached in tools/summer-jets/out/gwi.json, so re-seeding
+// after the flight data refreshes costs no GWI calls. --refresh-gwi fetches
+// them again (1 call for audience sizes + 1 per panel).
+//
+// Usage (from decoder-platform/): npx tsx --env-file=.env.local scripts/seed-omniyat.ts [--dry-run [config.json]] [--refresh-gwi]
 
 const SLUG = 'omniyat-decoder';
 const BUDGET = 1_000_000; // placeholder until the pitch budget is known
@@ -91,6 +99,17 @@ async function main() {
     summer: c.summer,
   }));
 
+  const gwiFile = path.resolve(process.cwd(), '../tools/summer-jets/out/gwi.json');
+  let results: GwiResults;
+  if (process.argv.includes('--refresh-gwi') || !existsSync(gwiFile)) {
+    results = await fetchGwiResults(OMNIYAT_GWI, markets.map((m) => m.iso2), gwiStats);
+    writeFileSync(gwiFile, JSON.stringify(results, null, 1));
+    console.log(`GWI: ${results.calls} calls, ${Object.keys(results.locations).length} countries${results.errors ? `, errors ${JSON.stringify(results.errors)}` : ''}`);
+  } else {
+    results = JSON.parse(readFileSync(gwiFile, 'utf-8')) as GwiResults;
+    console.log(`GWI: cached from ${results.fetchedAt}`);
+  }
+
   const config: VersionConfig = {
     name: 'Omniyat Decoder',
     slug: SLUG,
@@ -108,13 +127,18 @@ async function main() {
       objective: 'Summer presence among UHNW buyers of Dubai luxury real estate',
       destination: { iso2: 'ae', name: 'Dubai', lat: 25.2048, lng: 55.2708 },
     },
+    gwi: { ...OMNIYAT_GWI, results },
   };
 
   const v = validateConfig(config);
   if (!v.ok) throw new Error(`invalid config: ${v.errors.join('; ')}`);
   const kept = v.config.markets.filter((m) => m.summer).length;
   console.log(`${v.config.markets.length} markets, ${kept} with summer data`);
-  if (process.argv.includes('--dry-run')) return;
+  if (process.argv.includes('--dry-run')) {
+    const out = process.argv[process.argv.indexOf('--dry-run') + 1];
+    if (out && !out.startsWith('--')) writeFileSync(out, JSON.stringify(v.config));
+    return;
+  }
 
   const { id, revision } = await publishVersion(v.config);
   console.log(`published slug=${SLUG} id=${id} revision=${revision}`);
