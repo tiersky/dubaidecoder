@@ -6,21 +6,21 @@
   "lat": 43.735,
   "lng": 7.425,
   "values": {
-   "jets_summer": 118.5,
-   "jets_uplift": null,
+   "jets_summer": 114.5,
+   "jets_uplift": 2.08,
    "yacht_summer": 79186,
    "yacht_uplift": 1.53,
-   "gcc_share": 1.6
+   "gcc_share": 1.4
   },
   "summer": {
    "jets": {
     "airports": [
      "LFMN Nice"
     ],
-    "summerPer2Days": 118.5,
-    "offPer2Days": null,
-    "uplift": null,
-    "seasonArrivals": 7231,
+    "summerPer2Days": 114.5,
+    "offPer2Days": 55.1,
+    "uplift": 2.08,
+    "seasonArrivals": 6987,
     "series": [
      {
       "label": "2025-06-06",
@@ -49,11 +49,19 @@
      {
       "label": "2025-08-29",
       "value": 108.3
+     },
+     {
+      "label": "2025-09-12",
+      "value": 97.5
+     },
+     {
+      "label": "2025-09-26",
+      "value": 103.5
      }
     ],
     "peak": "2025-07-18",
     "captureRate": 0.97,
-    "gccShare": 0.016
+    "gccShare": 0.014
    },
    "yachts": {
     "sites": [
@@ -124,8 +132,8 @@
   "lat": 43.551,
   "lng": 7.017,
   "values": {
-   "jets_summer": 42.5,
-   "jets_uplift": null,
+   "jets_summer": 41.4,
+   "jets_uplift": 3.07,
    "yacht_summer": 113738,
    "yacht_uplift": 1.22,
    "gcc_share": 0.3
@@ -135,10 +143,10 @@
     "airports": [
      "LFMD Cannes-Mandelieu"
     ],
-    "summerPer2Days": 42.5,
-    "offPer2Days": null,
-    "uplift": null,
-    "seasonArrivals": 2594,
+    "summerPer2Days": 41.4,
+    "offPer2Days": 13.5,
+    "uplift": 3.07,
+    "seasonArrivals": 2526,
     "series": [
      {
       "label": "2025-06-06",
@@ -167,6 +175,14 @@
      {
       "label": "2025-08-29",
       "value": 46.0
+     },
+     {
+      "label": "2025-09-12",
+      "value": 45.0
+     },
+     {
+      "label": "2025-09-26",
+      "value": 30.0
      }
     ],
     "peak": "2025-06-20",
@@ -242,8 +258,8 @@
   "lat": 43.27,
   "lng": 6.64,
   "values": {
-   "jets_summer": 38.0,
-   "jets_uplift": null,
+   "jets_summer": 35.1,
+   "jets_uplift": 4.39,
    "yacht_summer": 39309,
    "yacht_uplift": 6.23,
    "gcc_share": 0.0
@@ -254,10 +270,10 @@
      "LFTH Toulon-Hyères (Saint-Tropez)",
      "LFTZ La Môle (Saint-Tropez)"
     ],
-    "summerPer2Days": 38.0,
-    "offPer2Days": null,
-    "uplift": null,
-    "seasonArrivals": 2316,
+    "summerPer2Days": 35.1,
+    "offPer2Days": 8.0,
+    "uplift": 4.39,
+    "seasonArrivals": 2143,
     "series": [
      {
       "label": "2025-06-06",
@@ -286,10 +302,18 @@
      {
       "label": "2025-08-29",
       "value": 40.9
+     },
+     {
+      "label": "2025-09-12",
+      "value": 20.6
+     },
+     {
+      "label": "2025-09-26",
+      "value": 29.7
      }
     ],
     "peak": "2025-07-18",
-    "captureRate": 0.86,
+    "captureRate": 0.75,
     "gccShare": 0.0
    },
    "yachts": {
@@ -364,7 +388,7 @@
   "lat": 41.135,
   "lng": 9.54,
   "values": {
-   "jets_summer": 77.7,
+   "jets_summer": 73.7,
    "jets_uplift": null,
    "yacht_summer": 16447,
    "yacht_uplift": 17.72,
@@ -375,10 +399,10 @@
     "airports": [
      "LIEO Olbia (Costa Smeralda)"
     ],
-    "summerPer2Days": 77.7,
+    "summerPer2Days": 73.7,
     "offPer2Days": null,
     "uplift": null,
-    "seasonArrivals": 4743,
+    "seasonArrivals": 4496,
     "series": [
      {
       "label": "2025-06-06",
@@ -399,10 +423,14 @@
      {
       "label": "2025-08-15",
       "value": 98.2
+     },
+     {
+      "label": "2025-09-12",
+      "value": 53.5
      }
     ],
     "peak": "2025-07-18",
-    "captureRate": 0.49,
+    "captureRate": 0.44,
     "gccShare": 0.019
    },
    "yachts": {
@@ -474,21 +502,21 @@
   "lat": 40.6,
   "lng": 14.4,
   "values": {
-   "jets_summer": 24.5,
+   "jets_summer": 22.2,
    "jets_uplift": null,
    "yacht_summer": 41020,
    "yacht_uplift": 16.79,
-   "gcc_share": 3.4
+   "gcc_share": 3.0
   },
   "summer": {
    "jets": {
     "airports": [
      "LIRN Naples (Capri/Amalfi)"
     ],
-    "summerPer2Days": 24.5,
+    "summerPer2Days": 22.2,
     "offPer2Days": null,
     "uplift": null,
-    "seasonArrivals": 1494,
+    "seasonArrivals": 1354,
     "series": [
      {
       "label": "2025-06-20",
@@ -501,11 +529,15 @@
      {
       "label": "2025-08-15",
       "value": 15.2
+     },
+     {
+      "label": "2025-09-26",
+      "value": 15.3
      }
     ],
     "peak": "2025-07-18",
-    "captureRate": 0.44,
-    "gccShare": 0.034
+    "captureRate": 0.39,
+    "gccShare": 0.03
    },
    "yachts": {
     "sites": [
@@ -577,8 +609,8 @@
   "lat": 45.985,
   "lng": 9.258,
   "values": {
-   "jets_summer": 49.7,
-   "jets_uplift": null,
+   "jets_summer": 53.9,
+   "jets_uplift": 1.4,
    "yacht_summer": null,
    "yacht_uplift": null,
    "gcc_share": 0.0
@@ -588,10 +620,10 @@
     "airports": [
      "LIML Milan Linate (Lake Como)"
     ],
-    "summerPer2Days": 49.7,
-    "offPer2Days": null,
-    "uplift": null,
-    "seasonArrivals": 3030,
+    "summerPer2Days": 53.9,
+    "offPer2Days": 38.6,
+    "uplift": 1.4,
+    "seasonArrivals": 3287,
     "series": [
      {
       "label": "2025-06-06",
@@ -620,9 +652,17 @@
      {
       "label": "2025-08-29",
       "value": 55.0
+     },
+     {
+      "label": "2025-09-12",
+      "value": 58.0
+     },
+     {
+      "label": "2025-09-26",
+      "value": 79.3
      }
     ],
-    "peak": "2025-06-20",
+    "peak": "2025-09-26",
     "captureRate": 0.94,
     "gccShare": 0.0
    },
@@ -638,8 +678,8 @@
   "lat": 45.44,
   "lng": 12.33,
   "values": {
-   "jets_summer": 22.8,
-   "jets_uplift": null,
+   "jets_summer": 21.5,
+   "jets_uplift": 1.78,
    "yacht_summer": 4959,
    "yacht_uplift": 1.68,
    "gcc_share": 0.0
@@ -649,10 +689,10 @@
     "airports": [
      "LIPZ Venice"
     ],
-    "summerPer2Days": 22.8,
-    "offPer2Days": null,
-    "uplift": null,
-    "seasonArrivals": 1390,
+    "summerPer2Days": 21.5,
+    "offPer2Days": 12.1,
+    "uplift": 1.78,
+    "seasonArrivals": 1311,
     "series": [
      {
       "label": "2025-06-06",
@@ -681,10 +721,18 @@
      {
       "label": "2025-08-29",
       "value": 39.4
+     },
+     {
+      "label": "2025-09-12",
+      "value": 16.2
+     },
+     {
+      "label": "2025-09-26",
+      "value": 17.7
      }
     ],
     "peak": "2025-08-29",
-    "captureRate": 0.96,
+    "captureRate": 0.95,
     "gccShare": 0.0
    },
    "yachts": {
@@ -756,21 +804,21 @@
   "lat": 36.51,
   "lng": -4.885,
   "values": {
-   "jets_summer": 43.4,
-   "jets_uplift": null,
+   "jets_summer": 41.6,
+   "jets_uplift": 1.45,
    "yacht_summer": 4921,
    "yacht_uplift": 0.5,
-   "gcc_share": 1.3
+   "gcc_share": 1.1
   },
   "summer": {
    "jets": {
     "airports": [
      "LEMG Málaga (Marbella)"
     ],
-    "summerPer2Days": 43.4,
-    "offPer2Days": null,
-    "uplift": null,
-    "seasonArrivals": 2646,
+    "summerPer2Days": 41.6,
+    "offPer2Days": 28.7,
+    "uplift": 1.45,
+    "seasonArrivals": 2539,
     "series": [
      {
       "label": "2025-06-06",
@@ -799,11 +847,19 @@
      {
       "label": "2025-08-29",
       "value": 39.4
+     },
+     {
+      "label": "2025-09-12",
+      "value": 32.0
+     },
+     {
+      "label": "2025-09-26",
+      "value": 38.9
      }
     ],
     "peak": "2025-07-04",
-    "captureRate": 0.99,
-    "gccShare": 0.013
+    "captureRate": 0.98,
+    "gccShare": 0.011
    },
    "yachts": {
     "sites": [
@@ -874,8 +930,8 @@
   "lat": 38.91,
   "lng": 1.44,
   "values": {
-   "jets_summer": 69.8,
-   "jets_uplift": null,
+   "jets_summer": 65.7,
+   "jets_uplift": 4.94,
    "yacht_summer": 47051,
    "yacht_uplift": 2.93,
    "gcc_share": 0.0
@@ -885,10 +941,10 @@
     "airports": [
      "LEIB Ibiza"
     ],
-    "summerPer2Days": 69.8,
-    "offPer2Days": null,
-    "uplift": null,
-    "seasonArrivals": 4258,
+    "summerPer2Days": 65.7,
+    "offPer2Days": 13.3,
+    "uplift": 4.94,
+    "seasonArrivals": 4010,
     "series": [
      {
       "label": "2025-06-06",
@@ -913,10 +969,18 @@
      {
       "label": "2025-08-15",
       "value": 75.0
+     },
+     {
+      "label": "2025-08-29",
+      "value": 71.3
+     },
+     {
+      "label": "2025-09-12",
+      "value": 35.7
      }
     ],
     "peak": "2025-08-01",
-    "captureRate": 0.95,
+    "captureRate": 0.89,
     "gccShare": 0.0
    },
    "yachts": {
@@ -988,8 +1052,8 @@
   "lat": 39.57,
   "lng": 2.65,
   "values": {
-   "jets_summer": 46.5,
-   "jets_uplift": null,
+   "jets_summer": 44.8,
+   "jets_uplift": 1.14,
    "yacht_summer": 96623,
    "yacht_uplift": 0.99,
    "gcc_share": 0.0
@@ -999,10 +1063,10 @@
     "airports": [
      "LEPA Palma (Mallorca)"
     ],
-    "summerPer2Days": 46.5,
-    "offPer2Days": null,
-    "uplift": null,
-    "seasonArrivals": 2834,
+    "summerPer2Days": 44.8,
+    "offPer2Days": 39.4,
+    "uplift": 1.14,
+    "seasonArrivals": 2733,
     "series": [
      {
       "label": "2025-06-06",
@@ -1027,10 +1091,18 @@
      {
       "label": "2025-08-15",
       "value": 40.9
+     },
+     {
+      "label": "2025-08-29",
+      "value": 46.2
+     },
+     {
+      "label": "2025-09-12",
+      "value": 33.5
      }
     ],
     "peak": "2025-07-18",
-    "captureRate": 0.8,
+    "captureRate": 0.7,
     "gccShare": 0.0
    },
    "yachts": {
@@ -1102,21 +1174,21 @@
   "lat": 37.445,
   "lng": 25.33,
   "values": {
-   "jets_summer": 26.2,
+   "jets_summer": 23.1,
    "jets_uplift": null,
    "yacht_summer": 20231,
    "yacht_uplift": 22.3,
-   "gcc_share": 0.9
+   "gcc_share": 0.8
   },
   "summer": {
    "jets": {
     "airports": [
      "LGMK Mykonos"
     ],
-    "summerPer2Days": 26.2,
-    "offPer2Days": null,
+    "summerPer2Days": 23.1,
+    "offPer2Days": 0.0,
     "uplift": null,
-    "seasonArrivals": 1595,
+    "seasonArrivals": 1406,
     "series": [
      {
       "label": "2025-06-06",
@@ -1141,11 +1213,19 @@
      {
       "label": "2025-08-15",
       "value": 20.6
+     },
+     {
+      "label": "2025-08-29",
+      "value": 19.9
+     },
+     {
+      "label": "2025-09-12",
+      "value": 7.6
      }
     ],
     "peak": "2025-08-01",
-    "captureRate": 0.7,
-    "gccShare": 0.009
+    "captureRate": 0.67,
+    "gccShare": 0.008
    },
    "yachts": {
     "sites": [
@@ -1284,7 +1364,7 @@
     "year": 2023
    },
    "notes": [
-    "No jet data yet for LGSR."
+    "OpenSky coverage at LGSR is too thin to count private jets, so jet traffic is not measured here."
    ]
   }
  },
@@ -1295,21 +1375,21 @@
   "lat": 37.81,
   "lng": 23.77,
   "values": {
-   "jets_summer": 40.8,
-   "jets_uplift": null,
+   "jets_summer": 40.9,
+   "jets_uplift": 3.47,
    "yacht_summer": 33208,
    "yacht_uplift": 0.93,
-   "gcc_share": 0.8
+   "gcc_share": 0.5
   },
   "summer": {
    "jets": {
     "airports": [
      "LGAV Athens"
     ],
-    "summerPer2Days": 40.8,
-    "offPer2Days": null,
-    "uplift": null,
-    "seasonArrivals": 2488,
+    "summerPer2Days": 40.9,
+    "offPer2Days": 11.8,
+    "uplift": 3.47,
+    "seasonArrivals": 2495,
     "series": [
      {
       "label": "2025-06-06",
@@ -1334,11 +1414,19 @@
      {
       "label": "2025-08-15",
       "value": 37.3
+     },
+     {
+      "label": "2025-08-29",
+      "value": 41.4
+     },
+     {
+      "label": "2025-09-12",
+      "value": 41.1
      }
     ],
     "peak": "2025-07-04",
-    "captureRate": 0.49,
-    "gccShare": 0.008
+    "captureRate": 0.52,
+    "gccShare": 0.005
    },
    "yachts": {
     "sites": [
@@ -1409,8 +1497,8 @@
   "lat": 37.035,
   "lng": 27.43,
   "values": {
-   "jets_summer": 30.8,
-   "jets_uplift": null,
+   "jets_summer": 28.2,
+   "jets_uplift": 21.69,
    "yacht_summer": 71085,
    "yacht_uplift": 1.81,
    "gcc_share": 2.7
@@ -1420,10 +1508,10 @@
     "airports": [
      "LTFE Bodrum-Milas"
     ],
-    "summerPer2Days": 30.8,
-    "offPer2Days": null,
-    "uplift": null,
-    "seasonArrivals": 1881,
+    "summerPer2Days": 28.2,
+    "offPer2Days": 1.3,
+    "uplift": 21.69,
+    "seasonArrivals": 1723,
     "series": [
      {
       "label": "2025-06-06",
@@ -1448,6 +1536,14 @@
      {
       "label": "2025-08-15",
       "value": 43.0
+     },
+     {
+      "label": "2025-08-29",
+      "value": 32.0
+     },
+     {
+      "label": "2025-09-12",
+      "value": 9.0
      }
     ],
     "peak": "2025-08-15",
@@ -1591,7 +1687,7 @@
     "year": 2023
    },
    "notes": [
-    "No jet data yet for LDDU."
+    "OpenSky coverage at LDDU is too thin to count private jets, so jet traffic is not measured here."
    ]
   }
  },
@@ -1671,7 +1767,7 @@
     "year": 2023
    },
    "notes": [
-    "No jet data yet for LDSP."
+    "OpenSky coverage at LDSP is too thin to count private jets, so jet traffic is not measured here."
    ]
   }
  },
@@ -1682,21 +1778,21 @@
   "lat": 46.204,
   "lng": 6.143,
   "values": {
-   "jets_summer": 52.5,
-   "jets_uplift": null,
+   "jets_summer": 54.0,
+   "jets_uplift": 1.35,
    "yacht_summer": null,
    "yacht_uplift": null,
-   "gcc_share": 0.7
+   "gcc_share": 0.8
   },
   "summer": {
    "jets": {
     "airports": [
      "LSGG Geneva"
     ],
-    "summerPer2Days": 52.5,
-    "offPer2Days": null,
-    "uplift": null,
-    "seasonArrivals": 3203,
+    "summerPer2Days": 54.0,
+    "offPer2Days": 40.1,
+    "uplift": 1.35,
+    "seasonArrivals": 3292,
     "series": [
      {
       "label": "2025-06-06",
@@ -1721,11 +1817,19 @@
      {
       "label": "2025-08-15",
       "value": 40.1
+     },
+     {
+      "label": "2025-08-29",
+      "value": 65.3
+     },
+     {
+      "label": "2025-09-12",
+      "value": 51.3
      }
     ],
     "peak": "2025-07-04",
-    "captureRate": 0.88,
-    "gccShare": 0.007
+    "captureRate": 0.89,
+    "gccShare": 0.008
    }
   }
  },
@@ -1736,11 +1840,11 @@
   "lat": 51.507,
   "lng": -0.128,
   "values": {
-   "jets_summer": 131.4,
-   "jets_uplift": null,
+   "jets_summer": 131.1,
+   "jets_uplift": 1.19,
    "yacht_summer": null,
    "yacht_uplift": null,
-   "gcc_share": 1.5
+   "gcc_share": 1.7
   },
   "summer": {
    "jets": {
@@ -1748,10 +1852,10 @@
      "EGLF London Farnborough",
      "EGGW London Luton"
     ],
-    "summerPer2Days": 131.4,
-    "offPer2Days": null,
-    "uplift": null,
-    "seasonArrivals": 8013,
+    "summerPer2Days": 131.1,
+    "offPer2Days": 110.5,
+    "uplift": 1.19,
+    "seasonArrivals": 7992,
     "series": [
      {
       "label": "2025-06-06",
@@ -1776,11 +1880,19 @@
      {
       "label": "2025-08-15",
       "value": 107.1
+     },
+     {
+      "label": "2025-08-29",
+      "value": 124.7
+     },
+     {
+      "label": "2025-09-12",
+      "value": 135.2
      }
     ],
     "peak": "2025-06-20",
-    "captureRate": 0.97,
-    "gccShare": 0.015
+    "captureRate": 0.95,
+    "gccShare": 0.017
    }
   }
  },
@@ -1791,8 +1903,8 @@
   "lat": 40.963,
   "lng": -72.185,
   "values": {
-   "jets_summer": 13.0,
-   "jets_uplift": null,
+   "jets_summer": 11.9,
+   "jets_uplift": 4.41,
    "yacht_summer": null,
    "yacht_uplift": null,
    "gcc_share": 0.0
@@ -1802,10 +1914,10 @@
     "airports": [
      "KHTO East Hampton (Hamptons)"
     ],
-    "summerPer2Days": 13.0,
-    "offPer2Days": null,
-    "uplift": null,
-    "seasonArrivals": 793,
+    "summerPer2Days": 11.9,
+    "offPer2Days": 2.7,
+    "uplift": 4.41,
+    "seasonArrivals": 724,
     "series": [
      {
       "label": "2025-06-06",
@@ -1830,6 +1942,14 @@
      {
       "label": "2025-08-15",
       "value": 12.0
+     },
+     {
+      "label": "2025-08-29",
+      "value": 13.0
+     },
+     {
+      "label": "2025-09-12",
+      "value": 4.0
      }
     ],
     "peak": "2025-07-18",
@@ -1848,8 +1968,8 @@
   "lat": 41.283,
   "lng": -70.099,
   "values": {
-   "jets_summer": 50.2,
-   "jets_uplift": null,
+   "jets_summer": 51.9,
+   "jets_uplift": 9.11,
    "yacht_summer": null,
    "yacht_uplift": null,
    "gcc_share": 0.0
@@ -1859,10 +1979,10 @@
     "airports": [
      "KACK Nantucket"
     ],
-    "summerPer2Days": 50.2,
-    "offPer2Days": null,
-    "uplift": null,
-    "seasonArrivals": 3060,
+    "summerPer2Days": 51.9,
+    "offPer2Days": 5.7,
+    "uplift": 9.11,
+    "seasonArrivals": 3164,
     "series": [
      {
       "label": "2025-06-06",
@@ -1887,9 +2007,17 @@
      {
       "label": "2025-08-15",
       "value": 67.0
+     },
+     {
+      "label": "2025-08-29",
+      "value": 71.0
+     },
+     {
+      "label": "2025-09-12",
+      "value": 43.0
      }
     ],
-    "peak": "2025-08-15",
+    "peak": "2025-08-29",
     "captureRate": null,
     "gccShare": 0.0
    },
@@ -1906,10 +2034,10 @@
   "lng": -80.192,
   "values": {
    "jets_summer": 79.0,
-   "jets_uplift": null,
+   "jets_uplift": 0.43,
    "yacht_summer": null,
    "yacht_uplift": null,
-   "gcc_share": 0.8
+   "gcc_share": 0.6
   },
   "summer": {
    "jets": {
@@ -1917,8 +2045,8 @@
      "KOPF Miami Opa-locka"
     ],
     "summerPer2Days": 79.0,
-    "offPer2Days": null,
-    "uplift": null,
+    "offPer2Days": 183.0,
+    "uplift": 0.43,
     "seasonArrivals": 4819,
     "series": [
      {
@@ -1944,11 +2072,19 @@
      {
       "label": "2025-08-15",
       "value": 82.0
+     },
+     {
+      "label": "2025-08-29",
+      "value": 72.0
+     },
+     {
+      "label": "2025-09-12",
+      "value": 86.0
      }
     ],
     "peak": "2025-06-06",
     "captureRate": null,
-    "gccShare": 0.008
+    "gccShare": 0.006
    },
    "notes": [
     "Miami is a winter destination; it is included as a contrast. US yachting is not measured (EMODnet is European)."
