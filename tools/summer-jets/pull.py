@@ -107,12 +107,26 @@ def main():
     RAW.mkdir(exist_ok=True)
     client = Client()
     todo = [(icao, kind, day) for kind, day in WINDOWS for icao in AIRPORTS]
-    done = 0
+    path = lambda icao, day: RAW / f'{icao}_{day.isoformat()}.json'
+    # Credits run out mid-run, so fetch the biggest gaps first: each next
+    # request goes to the (airport, season) with the lowest share of its
+    # windows already cached. Off-season samples come early, since without
+    # them an airport has no uplift at all.
+    have = {}
     for icao, kind, day in todo:
-        out = RAW / f'{icao}_{day.isoformat()}.json'
-        if out.exists():
-            done += 1
-            continue
+        have.setdefault((icao, kind), [0, 0])[1] += 1
+        if path(icao, day).exists():
+            have[(icao, kind)][0] += 1
+    missing = [t for t in todo if not path(t[0], t[2]).exists()]
+    ordered = []
+    while missing:
+        best = min(missing, key=lambda t: (have[(t[0], t[1])][0] / have[(t[0], t[1])][1], t[1] != 'off'))
+        missing.remove(best)
+        have[(best[0], best[1])][0] += 1
+        ordered.append(best)
+    done = len(todo) - len(ordered)
+    for icao, kind, day in ordered:
+        out = path(icao, day)
         flights, left = client.arrivals(icao, day)
         out.write_text(json.dumps({'airport': icao, 'kind': kind, 'start': day.isoformat(), 'flights': flights}))
         done += 1
