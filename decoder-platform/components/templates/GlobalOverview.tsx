@@ -8,11 +8,13 @@ import AllocationList from "@/components/organisms/AllocationList";
 import { formatMoney } from "@/lib/ui/theme";
 
 import SuggestedMarkets from '@/components/organisms/SuggestedMarkets';
+import SummerTimeline from '@/components/organisms/SummerTimeline';
 import CultureMap, { type CultureMapEntry } from '@/components/organisms/culture-space/CultureMap';
 import { cultureProfile } from '@/lib/insights/hofstede';
 import { cultureMarkets, marketForCultureName } from '@/lib/dashboard/culture-markets';
 import type { RecommendationSet } from '@/lib/config/types';
 interface GlobalOverviewProps {
+  /** The markets in the allocation; ones the user switched off are left out. */
   markets: MarketVm[];
   currency: string;
   allocations: AllocationRow[];
@@ -90,6 +92,8 @@ export default function GlobalOverview({
         </GlassCard>
         </div>
       </div>
+
+      <SummerTimeline markets={markets} onSelect={onSelectCountry} />
 
       {recommendations && <SuggestedMarkets set={recommendations} markets={markets} onSelect={onSelectCountry} />}
 
